@@ -18,11 +18,11 @@
 | Database | PostgreSQL | Financial and relational correctness, constraints, SQL analytics |
 | ORM/query layer | Drizzle ORM + SQL migrations | Typed queries without hiding important SQL semantics |
 | Cache/queue | Redis + BullMQ | Rate limiting, distributed jobs, locks, fanout |
-| Object storage | S3-compatible object storage + optional IPFS/Pinata publishing | Reliable creative/evidence storage with content-addressed public artifacts where useful |
+| Object storage | Cloudinary | Direct signed creative uploads and trusted asset metadata |
 | Smart contracts | Solidity + OpenZeppelin + Hardhat | Mature EVM tooling, strong testing/deployment ecosystem, and minimal migration cost for existing Solidity work |
 | Chain client | viem | Recommended Celo backend/client library for fee-currency transactions |
-| Agent model access | Provider-agnostic model gateway; AI SDK or thin custom adapter | Avoid vendor lock-in; structured output and streaming where useful |
-| Agent orchestration | Explicit TypeScript state machines + BullMQ jobs | More auditable than hiding money flows inside a generic autonomous framework |
+| Agent model access | OpenAI GPT-4o mini through a bounded model gateway | Reliable strict structured planning without granting any financial tool |
+| Agent orchestration | LangGraph JS + BullMQ | Explicit durable graph state, pause/resume, and auditable workflow transitions |
 | x402 | thirdweb x402 SDK initially | Celo docs provide a concrete supported implementation path |
 | Agent identity | ERC-8004 | Portable identity/reputation instead of proprietary registry |
 | App attribution | `@celo/attribution-tags` / ERC-8021 | Attribute AdFlow on-chain activity |
@@ -62,18 +62,12 @@ Do not make the application depend on a developer machine's globally installed p
 - package-level build/test scripts
 
 ```text
-apps/web
-apps/api
-apps/agent-worker
-apps/settlement-worker
-packages/contracts
-packages/chain
-packages/db
-packages/shared
-packages/agent-core
-packages/measurement-core
-packages/ui
-packages/config
+backend/api
+backend/packages/contracts
+backend/packages/chain
+backend/packages/db
+backend/packages/shared
+backend/packages/agent-core
 ```
 
 ### Why not one giant Next.js project?
@@ -1029,8 +1023,8 @@ X402_MAX_PAYMENT_ATOMIC
 # AI
 AI_PROVIDER
 AI_MODEL
-GROQ_API_KEY
 OPENAI_API_KEY
+MEM0_API_KEY
 ANTHROPIC_API_KEY
 AI_MAX_CALLS_PER_RUN
 
@@ -1060,7 +1054,7 @@ Use an environment schema at process startup and refuse to boot when required va
 
 ## 28. Package Ownership Rules
 
-### `packages/chain`
+### `backend/packages/chain`
 
 Only package allowed to know:
 
@@ -1071,11 +1065,11 @@ Only package allowed to know:
 - attribution encoding;
 - transaction simulation helpers.
 
-### `packages/agent-core`
+### `backend/packages/agent-core`
 
 Must not import private-key env vars directly. It calls typed executor interfaces.
 
-### `packages/db`
+### `backend/packages/db`
 
 Owns schema/migrations/repositories. No UI imports.
 
@@ -1083,7 +1077,7 @@ Owns schema/migrations/repositories. No UI imports.
 
 Never imports backend private env variables.
 
-### `apps/settlement-worker`
+### `backend/api/src/modules/settlement`
 
 Only service with settlement signing capability.
 

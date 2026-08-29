@@ -1,9 +1,14 @@
 node_modules/
+node_modules.stale/
+**/node_modules.stale/
 dist/
 .env
 .env.*
 !.env.example
 coverage/
-packages/contracts/artifacts/
-packages/contracts/cache/
-packages/contracts/typechain-types/
+backend/packages/contracts/artifacts/
+backend/packages/contracts/cache/
+backend/packages/contracts/typechain-types/
+backend/packages/*/src/**/*.js
+backend/packages/*/src/**/*.js.map
+backend/packages/*/src/**/*.d.ts

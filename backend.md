@@ -24,7 +24,9 @@ The backend should not be a thin CRUD service. It is the deterministic bridge be
 
 ## 2. Service Topology
 
-For hackathon deployment, use four processes from one monorepo.
+For the current deployment, run one Fastify modular monolith. API routes and workers are
+started in the same process; they remain separate modules so they can scale from the same
+artifact if operational volume later requires it.
 
 ```mermaid
 flowchart LR
@@ -35,12 +37,12 @@ flowchart LR
     API --> REDIS[(Redis)]
     API --> OBJ[Object Storage]
 
-    REDIS --> AGW[Agent Worker]
-    REDIS --> SW[Settlement Worker]
+    API --> AGW[In-process Agent Worker]
+    API --> SW[In-process Settlement Worker]
 
     AGW --> PG
     AGW --> PUB[Publisher Agent APIs]
-    AGW --> MODEL[Model Providers]
+    AGW --> MODEL[OpenAI]
     AGW --> X402[x402]
 
     SW --> PG
@@ -49,7 +51,7 @@ flowchart LR
     API --> CELO
 ```
 
-### `apps/api`
+### `backend/api`
 
 - human-facing APIs;
 - public embed endpoints;
@@ -59,7 +61,7 @@ flowchart LR
 - admin APIs;
 - websocket/SSE activity if used.
 
-### `apps/agent-worker`
+### In-process campaign worker
 
 - Campaign Agent jobs;
 - publisher discovery;
@@ -69,7 +71,7 @@ flowchart LR
 - optional x402 client calls;
 - decision receipts.
 
-### `apps/settlement-worker`
+### In-process settlement worker
 
 - settlement epoch preparation;
 - simulation;
@@ -89,7 +91,7 @@ Never receives backend signer secrets.
 Recommended internal structure:
 
 ```text
-apps/api/src/
+backend/api/src/
 ├── app.ts
 ├── server.ts
 ├── plugins/

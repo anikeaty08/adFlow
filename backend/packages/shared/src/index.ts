@@ -21,7 +21,9 @@ export const prefixes = [
   'run',
   'act',
 ] as const;
+
 export type Prefix = (typeof prefixes)[number];
+
 export const id = (prefix: Prefix) => `${prefix}_${ulid()}`;
 export const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 export const canonicalJson = (value: unknown) => JSON.stringify(value, Object.keys(value as object).sort());
@@ -47,6 +49,7 @@ export const campaignStatus = z.enum([
   'BLOCKED',
 ]);
 export const success = <T>(data: T, requestId: string) => ({ data, meta: { requestId } });
+
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -71,11 +74,13 @@ export type PlacementClaims = {
   nonce: string;
   keyId: string;
 };
+
 export function signPlacementToken(claims: PlacementClaims, secret: string) {
   const body = Buffer.from(JSON.stringify(claims)).toString('base64url');
   const sig = createHmac('sha256', secret).update(body).digest('base64url');
   return `${body}.${sig}`;
 }
+
 export function verifyPlacementToken(token: string, secret: string): PlacementClaims {
   const [body, signature] = token.split('.');
   if (!body || !signature) throw new DomainError('INVALID_PLACEMENT_TOKEN', 'Malformed placement token');
