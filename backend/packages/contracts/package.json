@@ -5,7 +5,8 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "export-abi": "tsx scripts/export-abi.ts",
-    "deploy:celo-sepolia": "hardhat run scripts/deploy.ts --network celoSepolia"
+    "deploy:celo-sepolia": "hardhat run scripts/deploy.ts --network celoSepolia",
+    "deploy:test-usdc:celo-sepolia": "hardhat run scripts/deploy-test-usdc.ts --network celoSepolia"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0"
