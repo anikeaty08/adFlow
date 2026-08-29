@@ -1,12 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { and, count, eq, sql } from 'drizzle-orm';
-import { agents, agentRuns, agreements, measurementEvents } from '@adflow/db';
+import { adSlots, agents, agentRuns, agreements, measurementEvents, publisherSites } from '@adflow/db';
 import { DomainError } from '@adflow/shared';
 import type { ApplicationDependencies } from '../../types.js';
 import { requireUser } from '../../shared/auth.js';
 import { response } from '../../shared/http.js';
 import { CampaignRepository } from '../campaigns/campaign.repository.js';
 import { CampaignQueue } from '../agents/campaign-queue.js';
+import { evaluatePublisherEligibility } from './publisher-eligibility.js';
 
 export async function registerOperationsRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const campaigns = new CampaignRepository(dependencies.db);
@@ -14,21 +15,44 @@ export async function registerOperationsRoutes(app: FastifyInstance, dependencie
   app.get('/api/v1/campaigns/:campaignId/candidates', async (request) => {
     const user = await requireUser(request, dependencies.db);
     const campaignId = (request.params as { campaignId: string }).campaignId;
-    if (!(await campaigns.findById(campaignId, user.id)))
-      throw new DomainError('NOT_FOUND', 'Campaign was not found.');
+    const campaign = await campaigns.findById(campaignId, user.id);
+    if (!campaign) throw new DomainError('NOT_FOUND', 'Campaign was not found.');
     const candidates = await dependencies.db
-      .select()
+      .select({ agent: agents, slot: adSlots, site: publisherSites })
       .from(agents)
+      .innerJoin(publisherSites, eq(publisherSites.publisherId, agents.publisherId))
+      .innerJoin(adSlots, eq(adSlots.siteId, publisherSites.id))
       .where(eq(agents.role, 'PUBLISHER'))
       .limit(100);
+
+    const policy = campaign.policy;
+    if (!policy) throw new DomainError('CONFLICT', 'Campaign policy is missing.');
+
     return response(
       request,
-      candidates.map((agent) => ({
-        publisherAgentId: agent.id,
-        walletAddress: agent.walletAddress,
-        hardFilter: { eligible: true, reasonCodes: [] },
-        score: { total: 0, components: {} },
-      })),
+      candidates.map(({ agent, slot, site }) => {
+        const eligibility = evaluatePublisherEligibility(
+          {
+            allowedCategories: policy.allowedCategories,
+            blockedCategories: policy.blockedCategories,
+            maxUnitPriceAtomic: campaign.maxUnitPriceAtomic,
+            minReputationScore: policy.minReputationScore,
+          },
+          {
+            categories: slot.categories,
+            floorRateAtomic: campaign.pricingModel === 'CPC' ? slot.floorCpcAtomic : slot.floorCpmAtomic,
+            siteStatus: site.status,
+            slotStatus: slot.status,
+          },
+        );
+        return {
+          publisherAgentId: agent.id,
+          slotId: slot.id,
+          walletAddress: agent.walletAddress,
+          hardFilter: { eligible: eligibility.eligible, reasonCodes: eligibility.reasonCodes },
+          score: eligibility.score,
+        };
+      }),
     );
   });
 

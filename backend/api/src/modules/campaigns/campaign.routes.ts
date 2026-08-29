@@ -25,6 +25,7 @@ export async function registerCampaignRoutes(app: FastifyInstance, dependencies:
         startAt: input.startAt,
         endAt: input.endAt,
         settlementToken: input.settlementToken,
+        allowedCategories: input.targeting.categories,
         blockedCategories: input.blockedCategories,
         minReputationScore: input.strategy.minReputationScore,
         maxPublisherAllocationAtomic: input.strategy.maxPublisherAllocationAtomic,

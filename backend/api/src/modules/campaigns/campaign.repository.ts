@@ -14,6 +14,7 @@ export type NewCampaign = {
   maxUnitPriceAtomic: string;
   startAt: Date;
   endAt: Date;
+  allowedCategories: string[];
   blockedCategories: string[];
   minReputationScore: number;
   maxPublisherAllocationAtomic?: string;
@@ -43,6 +44,7 @@ export class CampaignRepository {
       });
       await tx.insert(campaignPolicies).values({
         campaignId,
+        allowedCategories: input.allowedCategories,
         blockedCategories: input.blockedCategories,
         minReputationScore: input.minReputationScore.toString(),
         maxPublisherAllocationAtomic: input.maxPublisherAllocationAtomic,
