@@ -2,7 +2,7 @@
 
 import { IconWallet } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useSendTransaction } from 'wagmi';
+import { usePublicClient, useSendTransaction } from 'wagmi';
 import { confirmCampaignFunding, prepareCampaignFunding } from '@/lib/api/campaigns';
 
 type PreparedCall = { chainId: number; to: `0x${string}`; data: `0x${string}`; value: string | number };
@@ -14,6 +14,7 @@ type FundingPreparation = {
 
 export function FundCampaignButton({ campaignId }: { campaignId: string }) {
   const { sendTransactionAsync } = useSendTransaction();
+  const publicClient = usePublicClient({ chainId: 11142220 });
   const [status, setStatus] = useState('');
   async function fund() {
     setStatus('Preparing wallet transaction...');
@@ -39,7 +40,9 @@ export function FundCampaignButton({ campaignId }: { campaignId: string }) {
         to: prepared.fundingContractCall.to,
         value: BigInt(prepared.fundingContractCall.value),
       });
-      setStatus('Transaction submitted. Confirming the CampaignCreated event...');
+      setStatus('Transaction submitted. Waiting for chain confirmation...');
+      if (publicClient) await publicClient.waitForTransactionReceipt({ hash: fundingHash });
+      setStatus('Confirmed. Linking the CampaignCreated event...');
       await confirmCampaignFunding(campaignId, fundingHash);
       setStatus('Campaign funded and linked to its on-chain campaign ID.');
     } catch (error) {
