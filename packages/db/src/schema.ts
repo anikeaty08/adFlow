@@ -402,6 +402,35 @@ export const chainTransactions = pgTable(
   },
   (table) => [uniqueIndex('chain_transaction_hash_unique').on(table.transactionHash)],
 );
+/** Persistent cursors make contract-log polling resumable across restarts. */
+export const chainIndexCursors = pgTable(
+  'chain_index_cursors',
+  {
+    chainId: integer('chain_id').notNull(),
+    contractAddress: text('contract_address').notNull(),
+    lastFinalizedBlock: bigint('last_finalized_block', { mode: 'number' }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.chainId, table.contractAddress] })],
+);
+/** Immutable, idempotent raw event evidence used for later business-state reconciliation. */
+export const chainEventLogs = pgTable(
+  'chain_event_logs',
+  {
+    chainId: integer('chain_id').notNull(),
+    transactionHash: text('transaction_hash').notNull(),
+    logIndex: integer('log_index').notNull(),
+    blockNumber: bigint('block_number', { mode: 'number' }).notNull(),
+    contractAddress: text('contract_address').notNull(),
+    eventName: text('event_name').notNull(),
+    args: jsonb('args').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt,
+  },
+  (table) => [
+    primaryKey({ columns: [table.chainId, table.transactionHash, table.logIndex] }),
+    index('chain_event_contract_block_idx').on(table.chainId, table.contractAddress, table.blockNumber),
+  ],
+);
 export const outboxEvents = pgTable('outbox_events', {
   id: text('id').primaryKey(),
   topic: text('topic').notNull(),
