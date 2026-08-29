@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "publisher_quote_nonce_unique" ON "publisher_quotes" USING btree ("publisher_agent_id","quote_nonce");

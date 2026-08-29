@@ -243,7 +243,10 @@ export const quotes = pgTable(
     canonicalHash: text('canonical_hash').notNull(),
     status: text('status').notNull().default('OPEN'),
   },
-  (table) => [uniqueIndex('quote_hash_unique').on(table.canonicalHash)],
+  (table) => [
+    uniqueIndex('quote_hash_unique').on(table.canonicalHash),
+    uniqueIndex('publisher_quote_nonce_unique').on(table.publisherAgentId, table.quoteNonce),
+  ],
 );
 export const agreements = pgTable(
   'placement_agreements',

@@ -1,6 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { quotes, type Database } from '@adflow/db';
-import { canonicalJson, hash, id } from '@adflow/shared';
+import { canonicalJson, DomainError, hash, id } from '@adflow/shared';
 
 export type QuoteInput = {
   campaignId: string;
@@ -21,11 +21,17 @@ export class QuoteRepository {
 
   async create(input: QuoteInput) {
     const canonicalHash = hash(canonicalJson(input));
-    const [quote] = await this.db
-      .insert(quotes)
-      .values({ id: id('qte'), ...input, canonicalHash })
-      .returning();
-    return quote!;
+    try {
+      const [quote] = await this.db
+        .insert(quotes)
+        .values({ id: id('qte'), ...input, canonicalHash })
+        .returning();
+      return quote!;
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505')
+        throw new DomainError('QUOTE_REPLAYED', 'This publisher quote nonce has already been used.');
+      throw error;
+    }
   }
 
   listForCampaign(campaignId: string) {
