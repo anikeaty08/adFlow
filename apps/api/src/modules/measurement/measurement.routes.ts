@@ -30,6 +30,7 @@ export async function registerMeasurementRoutes(app: FastifyInstance, dependenci
         origin: input.page.origin,
         visibleRatio: input.viewability.visibleRatio,
         visibleMs: input.viewability.visibleMs,
+        userAgent: request.headers['user-agent'] ?? '',
       });
       reply.status(recorded.duplicate ? 200 : 202);
       return response(request, { accepted: !recorded.duplicate, eventId: recorded.event.id });
@@ -44,6 +45,7 @@ export async function registerMeasurementRoutes(app: FastifyInstance, dependenci
         (request.params as { placementToken: string }).placementToken,
         query.eventId,
         query.origin,
+        request.headers['user-agent'] ?? '',
       );
       return reply.redirect(result.destination, 302);
     },

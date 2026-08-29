@@ -4,6 +4,7 @@ import { loadConfig } from './config.js';
 import { startCampaignWorker } from './modules/agents/campaign-worker.js';
 import { startSettlementWorker } from './modules/settlement/settlement-worker.js';
 import { startChainReconciliationWorker } from './modules/settlement/chain-reconciliation.worker.js';
+import { startVerificationWorker } from './modules/measurement/verification.worker.js';
 
 const config = loadConfig();
 const database = createDatabase(config.DATABASE_URL);
@@ -11,6 +12,7 @@ const app = await buildApp({ config, db: database.db });
 const campaignWorker = startCampaignWorker(config, database.db);
 const settlementWorker = startSettlementWorker(config, database.db);
 const chainReconciliationWorker = startChainReconciliationWorker(config, database.db);
+const verificationWorker = startVerificationWorker(config, database.db);
 await app.listen({ host: '0.0.0.0', port: config.PORT });
 
 const shutdown = async () => {
@@ -18,6 +20,7 @@ const shutdown = async () => {
   await campaignWorker?.close();
   await settlementWorker?.close();
   chainReconciliationWorker?.close();
+  await verificationWorker?.close();
   await database.close();
   process.exit(0);
 };
