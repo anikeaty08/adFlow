@@ -37,9 +37,10 @@ export async function registerOperationsRoutes(app: FastifyInstance, dependencie
     const campaignId = (request.params as { campaignId: string }).campaignId;
     if (!(await campaigns.findById(campaignId, user.id)))
       throw new DomainError('NOT_FOUND', 'Campaign was not found.');
-    if (!dependencies.config.REDIS_URL)
+    const queueEndpoint = dependencies.config.REDIS_URL ?? dependencies.config.UPSTASH_REDIS_REST_URL;
+    if (!queueEndpoint || (!dependencies.config.REDIS_URL && !dependencies.config.UPSTASH_REDIS_REST_TOKEN))
       throw new DomainError('QUEUE_UNAVAILABLE', 'Redis is required to run discovery.');
-    const queue = new CampaignQueue(dependencies.config.REDIS_URL);
+    const queue = new CampaignQueue(queueEndpoint, dependencies.config.UPSTASH_REDIS_REST_TOKEN);
     try {
       const job = await queue.wake({ campaignId, trigger: 'MANUAL' });
       return response(request, { jobId: job.id, state: 'queued' });
@@ -117,9 +118,10 @@ export async function registerOperationsRoutes(app: FastifyInstance, dependencie
       const campaignId = (request.params as { campaignId: string }).campaignId;
       if (!(await campaigns.findById(campaignId, user.id)))
         throw new DomainError('NOT_FOUND', 'Campaign was not found.');
-      if (!dependencies.config.REDIS_URL)
+      const queueEndpoint = dependencies.config.REDIS_URL ?? dependencies.config.UPSTASH_REDIS_REST_URL;
+      if (!queueEndpoint || (!dependencies.config.REDIS_URL && !dependencies.config.UPSTASH_REDIS_REST_TOKEN))
         throw new DomainError('QUEUE_UNAVAILABLE', 'Redis is required for agent work.');
-      const queue = new CampaignQueue(dependencies.config.REDIS_URL);
+      const queue = new CampaignQueue(queueEndpoint, dependencies.config.UPSTASH_REDIS_REST_TOKEN);
       try {
         const job = await queue.wake({ campaignId, trigger });
         return response(request, {

@@ -99,9 +99,5 @@ export const loadConfig = (): Config => {
     MEM0_BASE_URL: process.env.MEM0_BASE_URL,
   };
   const parsed = schema.parse(environment);
-  if (!parsed.REDIS_URL && parsed.UPSTASH_REDIS_REST_URL && parsed.UPSTASH_REDIS_REST_TOKEN) {
-    const redisHost = new URL(parsed.UPSTASH_REDIS_REST_URL).hostname;
-    parsed.REDIS_URL = `rediss://default:${encodeURIComponent(parsed.UPSTASH_REDIS_REST_TOKEN)}@${redisHost}:6379`;
-  }
   return parsed;
 };

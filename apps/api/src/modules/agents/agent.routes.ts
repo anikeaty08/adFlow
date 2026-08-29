@@ -63,10 +63,11 @@ export async function registerAgentRoutes(app: FastifyInstance, dependencies: Ap
     // Authorization is verified before queuing. The worker reloads canonical campaign state again.
     const campaign = await new CampaignRepository(dependencies.db).findById(campaignId, user.id);
     if (!campaign) throw new DomainError('NOT_FOUND', 'Campaign was not found.');
-    if (!dependencies.config.REDIS_URL)
+    const queueEndpoint = dependencies.config.REDIS_URL ?? dependencies.config.UPSTASH_REDIS_REST_URL;
+    if (!queueEndpoint || (!dependencies.config.REDIS_URL && !dependencies.config.UPSTASH_REDIS_REST_TOKEN))
       throw new DomainError('QUEUE_UNAVAILABLE', 'Redis is required to schedule campaign agent work.');
 
-    const queue = new CampaignQueue(dependencies.config.REDIS_URL);
+    const queue = new CampaignQueue(queueEndpoint, dependencies.config.UPSTASH_REDIS_REST_TOKEN);
     try {
       const job = await queue.wake({ campaignId, trigger });
       return response(request, { jobId: job.id, campaignId, trigger });
