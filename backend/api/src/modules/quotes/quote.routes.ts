@@ -8,6 +8,7 @@ import { response } from '../../shared/http.js';
 import { QuoteRepository } from './quote.repository.js';
 import { QuoteRequestRepository } from './quote-request.repository.js';
 import { CampaignRepository } from '../campaigns/campaign.repository.js';
+import { evaluatePublisherOffer } from '@adflow/agent-core';
 
 const quoteSchema = z.object({
   publisherAgentId: z.string().min(1),
@@ -51,6 +52,39 @@ export async function registerQuoteRoutes(app: FastifyInstance, dependencies: Ap
       request,
       requests.map(({ request: quoteRequest }) => quoteRequest),
     );
+  });
+  app.post('/api/v1/publishers/me/quote-requests/:requestId/evaluate', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const quoteRequest = await quoteRequests.findPendingForPublisherOwner(
+      (request.params as { requestId: string }).requestId,
+      user.id,
+    );
+    if (!quoteRequest) throw new DomainError('NOT_FOUND', 'Pending quote request was not found.');
+    const input = z.object({ proposedRateAtomic: atomic }).parse(request.body);
+    const minimumRateAtomic =
+      quoteRequest.campaign.pricingModel === 'CPC'
+        ? quoteRequest.slot.floorCpcAtomic
+        : quoteRequest.slot.floorCpmAtomic;
+    const decision = evaluatePublisherOffer(
+      {
+        minimumRateAtomic,
+        blockedCategories: quoteRequest.publisher.blockedCategories,
+        acceptedCategories: quoteRequest.publisher.acceptedCategories,
+        minimumAdvertiserReputationScore: Number(quoteRequest.publisher.minimumAdvertiserReputationScore),
+      },
+      {
+        proposedRateAtomic: input.proposedRateAtomic,
+        categories: quoteRequest.policy.allowedCategories,
+        // Advertiser reputation is deliberately unavailable until a trusted canonical source is configured.
+        advertiserReputationScore: undefined,
+        inventoryAvailable: quoteRequest.slot.status === 'ACTIVE',
+      },
+    );
+    return response(request, {
+      quoteRequestId: quoteRequest.request.id,
+      campaignId: quoteRequest.campaign.id,
+      decision,
+    });
   });
   app.post('/agent/v1/quotes', async (request) => {
     const body = z.object({ campaignRef: z.string().min(1), ...quoteSchema.shape }).parse(request.body);
