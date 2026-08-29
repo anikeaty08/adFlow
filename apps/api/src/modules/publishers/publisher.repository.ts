@@ -106,6 +106,15 @@ export class PublisherRepository {
     return this.findSlotOwned(slotId, ownerUserId);
   }
 
+  async markSiteVerified(siteId: string) {
+    const [site] = await this.db
+      .update(publisherSites)
+      .set({ status: 'VERIFIED', verifiedAt: new Date() })
+      .where(eq(publisherSites.id, siteId))
+      .returning();
+    return site;
+  }
+
   async setSlotStatus(slotId: string, status: 'ACTIVE' | 'PAUSED') {
     const [slot] = await this.db.update(adSlots).set({ status }).where(eq(adSlots.id, slotId)).returning();
     return slot;

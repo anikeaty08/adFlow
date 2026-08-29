@@ -7,9 +7,11 @@ import { response } from '../../shared/http.js';
 import { PublisherRepository } from './publisher.repository.js';
 import { adSlots } from '@adflow/db';
 import { eq } from 'drizzle-orm';
+import { PublisherSiteVerificationService } from './site-verification.service.js';
 
 export async function registerPublisherRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const repository = new PublisherRepository(dependencies.db);
+  const verifier = new PublisherSiteVerificationService();
 
   app.post('/api/v1/publishers', async (request) => {
     const user = await requireUser(request, dependencies.db);
@@ -93,7 +95,9 @@ export async function registerPublisherRoutes(app: FastifyInstance, dependencies
     const user = await requireUser(request, dependencies.db);
     const site = await repository.findSiteOwned((request.params as { siteId: string }).siteId, user.id);
     if (!site) throw new DomainError('NOT_FOUND', 'Publisher site was not found.');
-    return response(request, { siteId: site.id, status: site.status, verified: site.status === 'VERIFIED' });
+    const verified = await verifier.verify(site);
+    const updated = verified ? await repository.markSiteVerified(site.id) : site;
+    return response(request, { siteId: site.id, status: updated?.status, verified });
   });
 
   app.get('/api/v1/publishers/slots', async (request) => {
