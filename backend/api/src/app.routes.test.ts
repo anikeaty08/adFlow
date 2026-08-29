@@ -24,6 +24,7 @@ const config: Config = {
   STRICT_POLICY_MODE: true,
   CLOUDINARY_FOLDER: 'adflow/creatives',
   OPENAI_MODEL: 'gpt-4o-mini',
+  AGENT_SCHEDULE_INTERVAL_MS: 1_800_000,
   MEM0_BASE_URL: 'https://api.mem0.ai',
 };
 

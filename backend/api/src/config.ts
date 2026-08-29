@@ -51,6 +51,7 @@ const schema = z
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
     OPENAI_API_KEY: z.string().min(1).optional(),
     OPENAI_MODEL: z.enum(['gpt-4o-mini', 'gpt-4.1', 'gpt-5-mini']).default('gpt-4.1'),
+    AGENT_SCHEDULE_INTERVAL_MS: z.coerce.number().int().min(60_000).max(3_600_000).default(1_800_000),
     MEM0_API_KEY: z.string().min(1).optional(),
     MEMO_API_KEY: z.string().min(1).optional(),
     MEM0_BASE_URL: z.url().default('https://api.mem0.ai'),
