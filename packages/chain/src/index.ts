@@ -106,9 +106,28 @@ export function prepareAgreementCreation(
     chainId: 11142220,
     to: settlementAddress,
     data: encodeFunctionData({
-      abi: campaignVaultAbi,
+      abi: adflowSettlementAbi,
       functionName: 'createAgreement' as never,
       args: [onchainCampaignId, publisherAddress, rateAtomic, unitScale, allocationCap],
+    }),
+    value: 0n,
+  };
+}
+
+export function prepareAgreementAcceptance(
+  settlementAddress: string,
+  agreementId: bigint,
+): PreparedContractCall {
+  if (!isAddress(settlementAddress)) throw new Error('Invalid settlement address');
+  if (agreementId <= 0n) throw new Error('Agreement ID must be positive');
+
+  return {
+    chainId: 11142220,
+    to: settlementAddress,
+    data: encodeFunctionData({
+      abi: adflowSettlementAbi,
+      functionName: 'acceptAgreement' as never,
+      args: [agreementId],
     }),
     value: 0n,
   };

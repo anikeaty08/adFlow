@@ -40,6 +40,7 @@ const schema = z
       .string()
       .regex(/^0x[a-fA-F0-9]{40}$/)
       .optional(),
+    SETTLEMENT_OPERATOR_PRIVATE_KEY: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional(),
     CHAIN_WRITE_MODE: z.literal('frontend_wallet').default('frontend_wallet'),
     REDIS_URL: z.url().optional(),
     UPSTASH_REDIS_REST_URL: z.url().optional(),

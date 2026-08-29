@@ -5,6 +5,7 @@ import { requireUser } from '../../shared/auth.js';
 import { response } from '../../shared/http.js';
 import { AgreementPolicyService } from './policy.service.js';
 import { AgreementRepository } from './agreement.repository.js';
+import { prepareAgreementCreation } from '@adflow/chain';
 
 export async function registerAgreementRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const repository = new AgreementRepository(dependencies.db);
@@ -42,13 +43,28 @@ export async function registerAgreementRoutes(app: FastifyInstance, dependencies
       (request.params as { quoteId: string }).quoteId,
       (request.params as { campaignId: string }).campaignId,
     );
+    const onchainCampaignId = evaluated.campaign.onchainCampaignId;
+    const settlementAddress = dependencies.config.ADFLOW_SETTLEMENT_ADDRESS;
+
+    if (!onchainCampaignId || !settlementAddress) {
+      return response(request, {
+        agreement,
+        state: 'awaiting_campaign_funding_or_contract_deployment',
+        contractCall: null,
+      });
+    }
+
     return response(request, {
       agreement,
-      contractCall: {
-        address: process.env.CAMPAIGN_VAULT_ADDRESS ?? null,
-        functionName: 'acceptAgreement',
-        args: [agreement?.id],
-      },
+      state: 'prepared',
+      contractCall: prepareAgreementCreation(
+        settlementAddress,
+        BigInt(onchainCampaignId),
+        evaluated.quote.publisherWallet,
+        BigInt(evaluated.quote.rateAtomic),
+        BigInt(evaluated.quote.unitScale),
+        BigInt(evaluated.quote.maxAllocationAtomic),
+      ),
     });
   });
 }
