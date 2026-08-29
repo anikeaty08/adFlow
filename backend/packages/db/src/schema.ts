@@ -256,6 +256,31 @@ export const quotes = pgTable(
     uniqueIndex('publisher_quote_nonce_unique').on(table.publisherAgentId, table.quoteNonce),
   ],
 );
+export const quoteRequests = pgTable(
+  'publisher_quote_requests',
+  {
+    id: text('id').primaryKey(),
+    campaignId: text('campaign_id')
+      .notNull()
+      .references(() => campaigns.id),
+    publisherAgentId: text('publisher_agent_id')
+      .notNull()
+      .references(() => agents.id),
+    slotId: text('slot_id')
+      .notNull()
+      .references(() => adSlots.id),
+    status: text('status').notNull().default('PENDING'),
+    requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+    fulfilledAt: timestamp('fulfilled_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('quote_request_campaign_agent_slot_unique').on(
+      table.campaignId,
+      table.publisherAgentId,
+      table.slotId,
+    ),
+  ],
+);
 export const agreements = pgTable(
   'placement_agreements',
   {

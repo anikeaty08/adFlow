@@ -6,6 +6,7 @@ import type { ApplicationDependencies } from '../../types.js';
 import { requireUser } from '../../shared/auth.js';
 import { response } from '../../shared/http.js';
 import { QuoteRepository } from './quote.repository.js';
+import { QuoteRequestRepository } from './quote-request.repository.js';
 import { CampaignRepository } from '../campaigns/campaign.repository.js';
 
 const quoteSchema = z.object({
@@ -23,6 +24,7 @@ const quoteSchema = z.object({
 
 export async function registerQuoteRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const repository = new QuoteRepository(dependencies.db);
+  const quoteRequests = new QuoteRequestRepository(dependencies.db);
   const campaigns = new CampaignRepository(dependencies.db);
   app.get('/api/v1/campaigns/:campaignId/quotes', async (request) => {
     const user = await requireUser(request, dependencies.db);
@@ -65,21 +67,24 @@ export async function registerQuoteRoutes(app: FastifyInstance, dependencies: Ap
     });
     if (!signatureValid)
       throw new DomainError('INVALID_QUOTE_SIGNATURE', 'Publisher quote signature is invalid.');
-    return response(
-      request,
-      await repository.create({
-        campaignId: body.campaignRef,
-        publisherAgentId: body.publisherAgentId,
-        slotId: body.slotId,
-        pricingModel: body.pricingModel,
-        rateAtomic: body.rateAtomic,
-        unitScale: body.unitScale,
-        maxAllocationAtomic: body.maxAllocationAtomic,
-        publisherWallet: body.publisherWallet,
-        quoteNonce: body.quoteNonce,
-        validUntil: body.validUntil,
-        signature: body.signature,
-      }),
-    );
+    const quote = await repository.create({
+      campaignId: body.campaignRef,
+      publisherAgentId: body.publisherAgentId,
+      slotId: body.slotId,
+      pricingModel: body.pricingModel,
+      rateAtomic: body.rateAtomic,
+      unitScale: body.unitScale,
+      maxAllocationAtomic: body.maxAllocationAtomic,
+      publisherWallet: body.publisherWallet,
+      quoteNonce: body.quoteNonce,
+      validUntil: body.validUntil,
+      signature: body.signature,
+    });
+    await quoteRequests.markFulfilled({
+      campaignId: body.campaignRef,
+      publisherAgentId: body.publisherAgentId,
+      slotId: body.slotId,
+    });
+    return response(request, quote);
   });
 }

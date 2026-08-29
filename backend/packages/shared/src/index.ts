@@ -12,6 +12,7 @@ export const prefixes = [
   'cmp',
   'crt',
   'qte',
+  'qrq',
   'agr',
   'evt',
   'epc',

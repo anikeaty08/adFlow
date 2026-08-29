@@ -17,6 +17,7 @@ import {
 import { id } from '@adflow/shared';
 import { AgreementPolicyService } from '../agreements/policy.service.js';
 import { OutboxRepository } from '../outbox/outbox.repository.js';
+import { QuoteRequestRepository } from '../quotes/quote-request.repository.js';
 import { AgentRunRepository } from './agent-run.repository.js';
 import type { CampaignModelGateway } from './openai-model.gateway.js';
 import type { AgentMemoryGateway } from './mem0.memory.gateway.js';
@@ -26,6 +27,11 @@ type CampaignRecord = typeof campaigns.$inferSelect & {
   policy: typeof campaignPolicies.$inferSelect;
 };
 type QuoteRecord = typeof quotes.$inferSelect;
+type EligibleInventory = {
+  publisherAgentId: string;
+  slotId: string;
+  score: number;
+};
 
 /**
  * Coordinates a bounded graph run. It reads canonical Postgres state at each run and only emits
@@ -35,6 +41,7 @@ export class CampaignAgentService {
   private readonly policy = new AgreementPolicyService();
   private readonly runRepository: AgentRunRepository;
   private readonly outbox: OutboxRepository;
+  private readonly quoteRequests: QuoteRequestRepository;
 
   constructor(
     private readonly db: Database,
@@ -43,6 +50,7 @@ export class CampaignAgentService {
   ) {
     this.runRepository = new AgentRunRepository(db);
     this.outbox = new OutboxRepository(db);
+    this.quoteRequests = new QuoteRequestRepository(db);
   }
 
   async run(campaignId: string, trigger: string, idempotencyKey: string) {
@@ -51,6 +59,7 @@ export class CampaignAgentService {
 
     let campaign: CampaignRecord | undefined;
     let campaignQuotes: QuoteRecord[] = [];
+    let eligibleInventory: EligibleInventory[] = [];
     let selectedQuote: QuoteRecord | undefined;
     let memories: Awaited<ReturnType<AgentMemoryGateway['search']>> = [];
     const graph = createDurableCampaignGraph({
@@ -63,14 +72,48 @@ export class CampaignAgentService {
         });
       },
       discoverPublishers: async () => {
-        campaignQuotes = await this.loadEligibleOpenQuotes(campaign!);
-        return [...new Set(campaignQuotes.map((quote) => quote.publisherAgentId))];
+        eligibleInventory = await this.loadEligibleInventory(campaign!);
+        return [...new Set(eligibleInventory.map((candidate) => candidate.publisherAgentId))];
       },
-      rankPublishers: async (_id, publisherIds) => publisherIds,
-      requestQuotes: async (_id, publisherIds) =>
-        campaignQuotes
+      rankPublishers: async (_id, publisherIds) =>
+        publisherIds.sort(
+          (left, right) =>
+            Math.max(
+              ...eligibleInventory
+                .filter((candidate) => candidate.publisherAgentId === right)
+                .map((candidate) => candidate.score),
+            ) -
+            Math.max(
+              ...eligibleInventory
+                .filter((candidate) => candidate.publisherAgentId === left)
+                .map((candidate) => candidate.score),
+            ),
+        ),
+      requestQuotes: async (_id, publisherIds) => {
+        campaignQuotes = await this.loadEligibleOpenQuotes(campaign!);
+        const existingInventoryKeys = new Set(
+          campaignQuotes.map((quote) => `${quote.publisherAgentId}:${quote.slotId}`),
+        );
+        for (const candidate of eligibleInventory) {
+          if (!publisherIds.includes(candidate.publisherAgentId)) continue;
+          if (existingInventoryKeys.has(`${candidate.publisherAgentId}:${candidate.slotId}`)) continue;
+          const request = await this.quoteRequests.createIfMissing({
+            campaignId,
+            publisherAgentId: candidate.publisherAgentId,
+            slotId: candidate.slotId,
+          });
+          if (!request) continue;
+          await this.outbox.enqueue('quote.requested', 'campaign', campaignId, {
+            quoteRequestId: request.id,
+            campaignId,
+            publisherAgentId: candidate.publisherAgentId,
+            slotId: candidate.slotId,
+          });
+        }
+        return campaignQuotes
           .filter((quote) => publisherIds.includes(quote.publisherAgentId))
-          .map((quote) => quote.id),
+          .map((quote) => quote.id);
+      },
       evaluateQuotes: async (_id, quoteIds) => {
         if (!campaign) return null;
         const proposal = await this.model.propose({
@@ -157,6 +200,35 @@ export class CampaignAgentService {
           ).eligible,
       )
       .map(({ quote }) => quote);
+  }
+
+  private async loadEligibleInventory(campaign: CampaignRecord): Promise<EligibleInventory[]> {
+    const inventory = await this.db
+      .select({ agent: agents, slot: adSlots, site: publisherSites })
+      .from(agents)
+      .innerJoin(publisherSites, eq(publisherSites.publisherId, agents.publisherId))
+      .innerJoin(adSlots, eq(adSlots.siteId, publisherSites.id))
+      .where(eq(agents.role, 'PUBLISHER'));
+
+    return inventory.flatMap(({ agent, slot, site }) => {
+      const eligibility = evaluatePublisherEligibility(
+        {
+          allowedCategories: campaign.policy.allowedCategories,
+          blockedCategories: campaign.policy.blockedCategories,
+          maxUnitPriceAtomic: campaign.maxUnitPriceAtomic,
+          minReputationScore: campaign.policy.minReputationScore,
+        },
+        {
+          categories: slot.categories,
+          floorRateAtomic: campaign.pricingModel === 'CPC' ? slot.floorCpcAtomic : slot.floorCpmAtomic,
+          siteStatus: site.status,
+          slotStatus: slot.status,
+        },
+      );
+      return eligibility.eligible
+        ? [{ publisherAgentId: agent.id, slotId: slot.id, score: eligibility.score.total }]
+        : [];
+    });
   }
 
   private evaluatePolicy(
