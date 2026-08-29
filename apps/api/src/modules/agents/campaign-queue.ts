@@ -58,7 +58,7 @@ export class CampaignQueue {
     if (!this.restUrl) return;
     const poll = async () => {
       const raw = await this.command('RPOP', 'adflow:campaigns');
-      if (!raw) return;
+      if (typeof raw !== 'string') return;
       await handler(JSON.parse(raw) as { id: string; name: string; data: CampaignWakeupPayload });
     };
     this.pollingTimer = setInterval(() => void poll().catch(() => undefined), 1_000);

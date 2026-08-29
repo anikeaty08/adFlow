@@ -13,7 +13,7 @@ function isPrivateAddress(address: string) {
     return (
       address === '::1' || address.startsWith('fc') || address.startsWith('fd') || address.startsWith('fe80')
     );
-  const [a, b] = address.split('.').map(Number);
+  const [a = -1, b = -1] = address.split('.').map(Number);
   return (
     a === 10 ||
     a === 127 ||

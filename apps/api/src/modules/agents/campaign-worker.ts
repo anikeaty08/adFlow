@@ -2,7 +2,7 @@ import { Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import type { Database } from '@adflow/db';
 import type { Config } from '../../config.js';
-import { campaignWakeupJob, type CampaignWakeupPayload } from './campaign-queue.js';
+import { CampaignQueue, campaignWakeupJob, type CampaignWakeupPayload } from './campaign-queue.js';
 import { CampaignAgentService } from './campaign-agent.service.js';
 import { Mem0MemoryGateway } from './mem0.memory.gateway.js';
 import {
