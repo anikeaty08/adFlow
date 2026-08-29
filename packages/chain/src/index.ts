@@ -41,6 +41,18 @@ export type PreparedContractCall = {
 
 export const campaignVaultAbi = campaignVaultArtifact as Abi;
 export const adflowSettlementAbi = settlementArtifact as Abi;
+export const erc20Abi = [
+  {
+    type: 'function',
+    name: 'approve',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: 'success', type: 'bool' }],
+  },
+] as const;
 
 export function prepareCampaignCreation(
   vaultAddress: string,
@@ -62,23 +74,41 @@ export function prepareCampaignCreation(
   };
 }
 
+export function prepareTokenApproval(
+  tokenAddress: string,
+  spender: string,
+  amount: bigint,
+): PreparedContractCall {
+  if (!isAddress(tokenAddress) || !isAddress(spender)) throw new Error('Invalid token or spender address');
+  if (amount <= 0n) throw new Error('Approval amount must be positive');
+  return {
+    chainId: 11142220,
+    to: tokenAddress,
+    data: encodeFunctionData({ abi: erc20Abi, functionName: 'approve', args: [spender, amount] }),
+    value: 0n,
+  };
+}
+
 export function prepareAgreementCreation(
-  vaultAddress: string,
+  settlementAddress: string,
   onchainCampaignId: bigint,
   publisherAddress: string,
+  rateAtomic: bigint,
+  unitScale: bigint,
   allocationCap: bigint,
 ): PreparedContractCall {
-  if (!isAddress(vaultAddress) || !isAddress(publisherAddress)) throw new Error('Invalid contract address');
-  if (onchainCampaignId <= 0n || allocationCap <= 0n)
-    throw new Error('Campaign and allocation must be positive');
+  if (!isAddress(settlementAddress) || !isAddress(publisherAddress))
+    throw new Error('Invalid contract address');
+  if (onchainCampaignId <= 0n || allocationCap <= 0n || rateAtomic <= 0n || unitScale <= 0n)
+    throw new Error('Campaign, rate, scale, and allocation must be positive');
 
   return {
     chainId: 11142220,
-    to: vaultAddress,
+    to: settlementAddress,
     data: encodeFunctionData({
       abi: campaignVaultAbi,
       functionName: 'createAgreement' as never,
-      args: [onchainCampaignId, publisherAddress, allocationCap],
+      args: [onchainCampaignId, publisherAddress, rateAtomic, unitScale, allocationCap],
     }),
     value: 0n,
   };

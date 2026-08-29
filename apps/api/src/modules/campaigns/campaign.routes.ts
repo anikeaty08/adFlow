@@ -6,6 +6,7 @@ import { requireUser } from '../../shared/auth.js';
 import { response } from '../../shared/http.js';
 import { CampaignRepository } from './campaign.repository.js';
 import { CampaignService } from './campaign.service.js';
+import { prepareCampaignCreation, prepareTokenApproval } from '@adflow/chain';
 
 export async function registerCampaignRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const service = new CampaignService(new CampaignRepository(dependencies.db));
@@ -51,19 +52,34 @@ export async function registerCampaignRoutes(app: FastifyInstance, dependencies:
   app.post('/api/v1/campaigns/:campaignId/prepare-funding', async (request) => {
     const owner = await requireUser(request, dependencies.db);
     const campaign = await service.get((request.params as { campaignId: string }).campaignId, owner);
+    const amount = BigInt(campaign.budgetPlannedAtomic);
+    if (!dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS) {
+      return response(request, {
+        chainId: campaign.chainId,
+        token: campaign.settlementTokenAddress,
+        state: 'awaiting_contract_deployment',
+        approval: null,
+        fundingContractCall: null,
+      });
+    }
     return response(request, {
       chainId: campaign.chainId,
       token: campaign.settlementTokenAddress,
       approval: {
         required: true,
-        spender: process.env.CAMPAIGN_VAULT_ADDRESS ?? null,
+        spender: dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
         amount: campaign.budgetPlannedAtomic,
+        contractCall: prepareTokenApproval(
+          campaign.settlementTokenAddress,
+          dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+          amount,
+        ),
       },
-      contractCall: {
-        address: process.env.CAMPAIGN_VAULT_ADDRESS ?? null,
-        functionName: 'createCampaign',
-        args: [campaign.id, campaign.budgetPlannedAtomic],
-      },
+      fundingContractCall: prepareCampaignCreation(
+        dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+        campaign.settlementTokenAddress,
+        amount,
+      ),
       state: 'prepared',
     });
   });
