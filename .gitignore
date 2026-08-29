@@ -6,6 +6,7 @@ dist/
 .env.*
 !.env.example
 coverage/
+*.md
 backend/packages/contracts/artifacts/
 backend/packages/contracts/cache/
 backend/packages/contracts/typechain-types/
