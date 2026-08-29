@@ -168,6 +168,14 @@ export const publishers = pgTable('publishers', {
   name: text('name').notNull(),
   payoutWalletAddress: text('payout_wallet_address').notNull(),
   status: text('status').notNull().default('PENDING'),
+  blockedCategories: jsonb('blocked_categories').$type<string[]>().notNull().default([]),
+  acceptedCategories: jsonb('accepted_categories').$type<string[]>().notNull().default([]),
+  minimumAdvertiserReputationScore: numeric('minimum_advertiser_reputation_score', {
+    precision: 5,
+    scale: 2,
+  })
+    .notNull()
+    .default('0'),
   createdAt,
 });
 export const publisherSites = pgTable(

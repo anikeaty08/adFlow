@@ -111,6 +111,27 @@ export class PublisherRepository {
     return updated;
   }
 
+  async updatePreferences(
+    ownerUserId: string,
+    preferences: {
+      blockedCategories: string[];
+      acceptedCategories: string[];
+      minimumAdvertiserReputationScore: number;
+    },
+  ) {
+    const publisher = await this.findMine(ownerUserId);
+    if (!publisher) return undefined;
+    const [updated] = await this.db
+      .update(publishers)
+      .set({
+        ...preferences,
+        minimumAdvertiserReputationScore: preferences.minimumAdvertiserReputationScore.toString(),
+      })
+      .where(eq(publishers.id, publisher.id))
+      .returning();
+    return updated;
+  }
+
   async findSlot(slotId: string, ownerUserId: string) {
     return this.findSlotOwned(slotId, ownerUserId);
   }

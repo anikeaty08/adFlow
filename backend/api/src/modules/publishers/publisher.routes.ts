@@ -43,6 +43,20 @@ export async function registerPublisherRoutes(app: FastifyInstance, dependencies
     return response(request, publisher);
   });
 
+  app.patch('/api/v1/publishers/me/preferences', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const input = z
+      .object({
+        blockedCategories: z.array(z.string().min(1).max(80)).max(30).default([]),
+        acceptedCategories: z.array(z.string().min(1).max(80)).max(30).default([]),
+        minimumAdvertiserReputationScore: z.number().min(0).max(100).default(0),
+      })
+      .parse(request.body);
+    const publisher = await repository.updatePreferences(user.id, input);
+    if (!publisher) throw new DomainError('NOT_FOUND', 'Publisher profile was not found.');
+    return response(request, publisher);
+  });
+
   app.post('/api/v1/publishers/sites', async (request) => {
     const user = await requireUser(request, dependencies.db);
     const input = z
