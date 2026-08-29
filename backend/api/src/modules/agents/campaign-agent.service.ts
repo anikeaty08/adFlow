@@ -271,7 +271,10 @@ export class CampaignAgentService {
     return actionId;
   }
 
-  private databaseStatus(status: string): 'WAITING_FOR_APPROVAL' | 'COMPLETED' | 'BLOCKED' {
+  private databaseStatus(
+    status: string,
+  ): 'WAITING_FOR_QUOTES' | 'WAITING_FOR_APPROVAL' | 'COMPLETED' | 'BLOCKED' {
+    if (status === 'WAITING_FOR_QUOTES') return status;
     if (status === 'WAITING_FOR_APPROVAL') return status;
     if (status === 'BLOCKED') return status;
     return 'COMPLETED';

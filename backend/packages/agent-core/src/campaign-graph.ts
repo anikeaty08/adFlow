@@ -9,13 +9,18 @@ export const campaignRuntimeState = new StateSchema({
   rankedPublisherIds: z.array(z.string()).default([]),
   quoteIds: z.array(z.string()).default([]),
   proposal: proposalSchema.nullable().default(null),
-  policyDecision: z.enum(['ALLOW', 'DENY', 'REQUIRES_APPROVAL']).nullable().default(null),
+  policyDecision: z
+    .enum(['ALLOW', 'DENY', 'REQUIRES_APPROVAL', 'WAITING_FOR_QUOTES'])
+    .nullable()
+    .default(null),
   executionId: z.string().nullable().default(null),
   monitorResult: z.enum(['GOOD', 'BAD', 'FRAUD', 'NO_DATA']).nullable().default(null),
-  status: z.enum(['RUNNING', 'WAITING_FOR_APPROVAL', 'COMPLETED', 'BLOCKED']).default('RUNNING'),
+  status: z
+    .enum(['RUNNING', 'WAITING_FOR_QUOTES', 'WAITING_FOR_APPROVAL', 'COMPLETED', 'BLOCKED'])
+    .default('RUNNING'),
 });
 
-export type PolicyDecision = 'ALLOW' | 'DENY' | 'REQUIRES_APPROVAL';
+export type PolicyDecision = 'ALLOW' | 'DENY' | 'REQUIRES_APPROVAL' | 'WAITING_FOR_QUOTES';
 export type MonitorResult = 'GOOD' | 'BAD' | 'FRAUD' | 'NO_DATA';
 
 export type CampaignGraphDependencies = {
@@ -57,13 +62,16 @@ export function createDurableCampaignGraph(dependencies: CampaignGraphDependenci
       quoteIds: await dependencies.requestQuotes(state.campaignId, state.rankedPublisherIds),
     }))
     .addNode('evaluate_quotes', async (state) => {
+      if (state.quoteIds.length === 0) return { proposal: proposalSchema.parse({ kind: 'WAIT_FOR_QUOTES' }) };
       const proposal = await dependencies.evaluateQuotes(state.campaignId, state.quoteIds);
       return { proposal: proposal ? proposalSchema.parse(proposal) : null };
     })
     .addNode('policy_gate', async (state) => {
-      if (!state.proposal) return { policyDecision: 'DENY' as const };
+      if (!state.proposal || state.proposal.kind === 'WAIT_FOR_QUOTES')
+        return { policyDecision: 'WAITING_FOR_QUOTES' as const };
       return { policyDecision: await dependencies.evaluatePolicy(state.campaignId, state.proposal) };
     })
+    .addNode('await_quotes', async () => ({ status: 'WAITING_FOR_QUOTES' as const }))
     .addNode('await_approval', async () => ({ status: 'WAITING_FOR_APPROVAL' as const }))
     .addNode('execute', async (state) => ({
       executionId: await dependencies.executeApprovedAction(state.campaignId, state.proposal!),
@@ -85,10 +93,12 @@ export function createDurableCampaignGraph(dependencies: CampaignGraphDependenci
     .addEdge('request_quotes', 'evaluate_quotes')
     .addEdge('evaluate_quotes', 'policy_gate')
     .addConditionalEdges('policy_gate', (state) => {
+      if (state.policyDecision === 'WAITING_FOR_QUOTES') return 'await_quotes';
       if (state.policyDecision === 'ALLOW') return 'execute';
       if (state.policyDecision === 'REQUIRES_APPROVAL') return 'await_approval';
       return 'propose_settlement';
     })
+    .addEdge('await_quotes', END)
     .addEdge('await_approval', END)
     .addEdge('execute', 'monitor')
     .addConditionalEdges('monitor', (state) =>

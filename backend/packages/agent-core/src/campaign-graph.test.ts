@@ -44,4 +44,16 @@ describe('Durable Campaign Agent graph', () => {
     expect(proposeSettlement).toHaveBeenCalledOnce();
     expect(result.status).toBe('COMPLETED');
   });
+
+  it('waits for signed publisher quotes instead of attempting settlement', async () => {
+    const proposeSettlement = vi.fn(async () => undefined);
+    const graph = createDurableCampaignGraph(
+      dependencies({ requestQuotes: async () => [], proposeSettlement }),
+    );
+
+    const result = await graph.invoke({ campaignId: 'cmp_1', agentRunId: 'run_1' });
+
+    expect(result.status).toBe('WAITING_FOR_QUOTES');
+    expect(proposeSettlement).not.toHaveBeenCalled();
+  });
 });

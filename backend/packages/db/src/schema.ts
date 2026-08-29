@@ -40,6 +40,7 @@ export const measurementStatus = pgEnum('measurement_status', ['PENDING', 'ACCEP
 export const agentRunStatus = pgEnum('agent_run_status', [
   'QUEUED',
   'RUNNING',
+  'WAITING_FOR_QUOTES',
   'WAITING_FOR_APPROVAL',
   'COMPLETED',
   'FAILED',

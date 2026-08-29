@@ -43,6 +43,13 @@
       "when": 1788001800000,
       "tag": "0005_quote_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788002100000,
+      "tag": "0006_agent_waiting_for_quotes",
+      "breakpoints": true
     }
   ]
 }
