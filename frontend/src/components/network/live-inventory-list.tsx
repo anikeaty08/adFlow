@@ -38,6 +38,9 @@ export function LiveInventoryList() {
           <span style={{ color: 'var(--muted)', display: 'block', fontSize: '0.8rem', marginTop: 4 }}>
             {slot.categories.join(', ') || 'Uncategorized'} · floor {slot.floorCpcAtomic} atomic CPC
           </span>
+          <span style={{ color: 'var(--muted)', display: 'block', fontSize: '0.8rem', marginTop: 4 }}>
+            Publisher agent: {slot.publisherAgentId ?? 'Not registered'}
+          </span>
         </article>
       ))}
     </div>
