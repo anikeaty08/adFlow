@@ -146,9 +146,21 @@ export function ReferenceLanding() {
 
       <main>
         <section className={styles.hero} id="story">
+          <video
+            aria-hidden="true"
+            autoPlay
+            className={styles.heroVideo}
+            loop
+            muted
+            playsInline
+            poster="/brand/adflow-network.png"
+            preload="metadata"
+          >
+            <source src="/brand/adflow-network.mp4" type="video/mp4" />
+          </video>
           <Image
             alt="Connected AdFlow agents and Celo settlement network"
-            className={styles.heroImage}
+            className={styles.heroImageFallback}
             fill
             priority
             sizes="100vw"
@@ -175,7 +187,6 @@ export function ReferenceLanding() {
           </div>
           <div className={styles.heroMeta}>
             <span>01 — 04</span>
-            <span>Scroll to inspect the flow</span>
             <span>Celo / 11142220</span>
           </div>
         </section>
@@ -299,7 +310,7 @@ export function ReferenceLanding() {
               alt="AdFlow connected agent network"
               fill
               sizes="(max-width: 900px) 100vw, 50vw"
-              src="/brand/adflow-network.png"
+              src="/brand/adflow-publisher-network.png"
             />
             <div className={styles.panelCaption}>
               <span>LIVE TOPOLOGY</span>

@@ -8,6 +8,8 @@ export class AuthService {
   constructor(private readonly repository: AuthRepository) {}
 
   async createChallenge(walletAddress: string, chainId: number) {
+    if (chainId !== 11142220)
+      throw new DomainError('UNSUPPORTED_CHAIN', 'Connect a wallet on Celo Sepolia (chain ID 11142220).');
     const expiresAt = new Date(Date.now() + nonceLifetimeMs);
     const nonce = crypto.randomUUID();
     const message = [
