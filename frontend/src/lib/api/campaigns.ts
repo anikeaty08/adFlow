@@ -92,6 +92,11 @@ export const listCampaignSettlements = (campaignId: string) =>
   apiRequest<SettlementEpoch[]>(`/api/v1/campaigns/${campaignId}/settlements`);
 export const prepareCampaignFunding = (campaignId: string) =>
   apiRequest(`/api/v1/campaigns/${campaignId}/prepare-funding`, { method: 'POST' });
+export const confirmCampaignFunding = (campaignId: string, txHash: string) =>
+  apiRequest(`/api/v1/campaigns/${campaignId}/confirm-funding`, {
+    body: JSON.stringify({ txHash }),
+    method: 'POST',
+  });
 
 export const createCampaign = (input: CreateCampaignInput) =>
   apiRequest<CampaignSummary>('/api/v1/campaigns', { body: JSON.stringify(input), method: 'POST' });

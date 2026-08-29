@@ -117,4 +117,19 @@ export class CampaignRepository {
       .returning();
     return campaign;
   }
+
+  async confirmFunding(campaignId: string, ownerUserId: string, onchainCampaignId: string) {
+    const [campaign] = await this.db
+      .update(campaigns)
+      .set({ onchainCampaignId, status: 'FUNDED', updatedAt: new Date() })
+      .where(
+        and(
+          eq(campaigns.id, campaignId),
+          eq(campaigns.ownerUserId, ownerUserId),
+          eq(campaigns.status, 'DRAFT'),
+        ),
+      )
+      .returning();
+    return campaign;
+  }
 }
