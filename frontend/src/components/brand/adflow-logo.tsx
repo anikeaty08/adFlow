@@ -8,7 +8,7 @@ type AdFlowLogoProps = {
 export function AdFlowLogo({ compact = false, inverse = false }: AdFlowLogoProps) {
   return (
     <span style={{ alignItems: 'center', display: 'inline-flex', gap: '0.65rem' }}>
-      <Image alt="AdFlow" height={34} priority src="/brand/adflow-symbol.png" width={34} />
+      <Image alt="AdFlow" height={34} priority src="/brand/adflow-symbol.svg" width={34} />
       {!compact ? (
         <span
           style={{

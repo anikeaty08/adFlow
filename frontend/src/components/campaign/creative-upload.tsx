@@ -4,7 +4,14 @@ import { IconPhotoUp } from '@tabler/icons-react';
 import { useState } from 'react';
 import { uploadCreative } from '@/lib/cloudinary/creative-upload';
 
-export function CreativeUpload() {
+type CreativeUploadProps = {
+  destinationUrl: string;
+  headline: string;
+  body?: string;
+  onComplete?: (creativeId: string) => void;
+};
+
+export function CreativeUpload({ body, destinationUrl, headline, onComplete }: CreativeUploadProps) {
   const [status, setStatus] = useState<'idle' | 'uploading' | 'complete' | 'error'>('idle');
   const [message, setMessage] = useState('Upload a PNG, JPEG, or WebP under 5 MB.');
   async function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -13,7 +20,8 @@ export function CreativeUpload() {
     setStatus('uploading');
     setMessage('Uploading directly to Cloudinary...');
     try {
-      await uploadCreative(file, 'https://product.dev', 'Developer API Launch');
+      const creative = (await uploadCreative(file, destinationUrl, headline, body)) as { id: string };
+      onComplete?.(creative.id);
       setStatus('complete');
       setMessage('Creative verified and ready for campaign attachment.');
     } catch (error) {

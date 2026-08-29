@@ -101,6 +101,7 @@ export const campaignInput = z
     landingUrl: safeUrl,
     pricingModel,
     targeting: z.object({ categories: z.array(z.string()).max(30).default([]) }).default({ categories: [] }),
+    creativeIds: z.array(z.string().min(1)).max(20).default([]),
     blockedCategories: z.array(z.string()).max(30).default([]),
     maxUnitPriceAtomic: atomic,
     settlementToken: z.object({ symbol: z.string().min(2).max(10), address }),

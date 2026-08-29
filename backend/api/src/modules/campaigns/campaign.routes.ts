@@ -12,6 +12,7 @@ import {
   prepareCampaignWithdrawal,
   prepareTokenApproval,
 } from '@adflow/chain';
+import { serializePreparedContractCall } from './contract-call.serializer.js';
 
 export async function registerCampaignRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const service = new CampaignService(new CampaignRepository(dependencies.db));
@@ -26,6 +27,7 @@ export async function registerCampaignRoutes(app: FastifyInstance, dependencies:
         endAt: input.endAt,
         settlementToken: input.settlementToken,
         allowedCategories: input.targeting.categories,
+        creativeIds: input.creativeIds,
         blockedCategories: input.blockedCategories,
         minReputationScore: input.strategy.minReputationScore,
         maxPublisherAllocationAtomic: input.strategy.maxPublisherAllocationAtomic,
@@ -75,17 +77,21 @@ export async function registerCampaignRoutes(app: FastifyInstance, dependencies:
         required: true,
         spender: dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
         amount: campaign.budgetPlannedAtomic,
-        contractCall: prepareTokenApproval(
-          campaign.settlementTokenAddress,
-          dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
-          amount,
+        contractCall: serializePreparedContractCall(
+          prepareTokenApproval(
+            campaign.settlementTokenAddress,
+            dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+            amount,
+          ),
         ),
       },
-      fundingContractCall: prepareCampaignCreation(
-        dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
-        campaign.settlementTokenAddress,
-        amount,
-        BigInt(campaign.maxUnitPriceAtomic),
+      fundingContractCall: serializePreparedContractCall(
+        prepareCampaignCreation(
+          dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+          campaign.settlementTokenAddress,
+          amount,
+          BigInt(campaign.maxUnitPriceAtomic),
+        ),
       ),
       state: 'prepared',
     });
@@ -103,10 +109,12 @@ export async function registerCampaignRoutes(app: FastifyInstance, dependencies:
       }
       return response(request, {
         state: 'prepared',
-        contractCall: prepareCampaignActiveUpdate(
-          dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
-          BigInt(campaign.onchainCampaignId),
-          active,
+        contractCall: serializePreparedContractCall(
+          prepareCampaignActiveUpdate(
+            dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+            BigInt(campaign.onchainCampaignId),
+            active,
+          ),
         ),
       });
     });
@@ -119,10 +127,12 @@ export async function registerCampaignRoutes(app: FastifyInstance, dependencies:
       return response(request, { state: 'awaiting_contract_or_funding', contractCall: null });
     return response(request, {
       state: 'prepared',
-      contractCall: prepareCampaignActiveUpdate(
-        dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
-        BigInt(campaign.onchainCampaignId),
-        false,
+      contractCall: serializePreparedContractCall(
+        prepareCampaignActiveUpdate(
+          dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+          BigInt(campaign.onchainCampaignId),
+          false,
+        ),
       ),
     });
   });
@@ -134,9 +144,11 @@ export async function registerCampaignRoutes(app: FastifyInstance, dependencies:
       return response(request, { state: 'awaiting_contract_or_funding', contractCall: null });
     return response(request, {
       state: 'prepared',
-      contractCall: prepareCampaignWithdrawal(
-        dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
-        BigInt(campaign.onchainCampaignId),
+      contractCall: serializePreparedContractCall(
+        prepareCampaignWithdrawal(
+          dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+          BigInt(campaign.onchainCampaignId),
+        ),
       ),
     });
   });
