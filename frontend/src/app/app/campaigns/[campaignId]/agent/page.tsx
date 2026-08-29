@@ -1,7 +1,9 @@
 import { IconShieldCheck } from '@tabler/icons-react';
+import { CampaignLiveActivity } from '@/components/agent/campaign-live-activity';
 import { StudioScreen } from '@/components/studio/studio-screen';
 
-export default function AgentDecisionsPage() {
+export default async function AgentDecisionsPage({ params }: { params: Promise<{ campaignId: string }> }) {
+  const { campaignId } = await params;
   return (
     <StudioScreen
       description="Reason summaries expose evidence and policy outcomes, never private chain-of-thought."
@@ -31,6 +33,7 @@ export default function AgentDecisionsPage() {
           respected.
         </div>
       </article>
+      <CampaignLiveActivity campaignId={campaignId} />
     </StudioScreen>
   );
 }
