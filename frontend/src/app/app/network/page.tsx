@@ -16,7 +16,7 @@ export default function NetworkPage() {
     <section className={styles.page}>
       <header>
         <div>
-          <p className="eyebrow">Live marketplace</p>
+          <p className="eyebrow">Network topology</p>
           <h1>Network explorer</h1>
         </div>
         <button className="buttonSecondary" type="button">
@@ -28,6 +28,7 @@ export default function NetworkPage() {
       </div>
       <aside className={styles.legend}>
         <strong>Visible topology</strong>
+        <span>Illustrative graph · live inventory below</span>
         <span>Campaign agent</span>
         <span>Publisher agents</span>
         <span>Verification evidence</span>
