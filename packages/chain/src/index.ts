@@ -132,3 +132,37 @@ export function prepareAgreementAcceptance(
     value: 0n,
   };
 }
+
+export function prepareCampaignActiveUpdate(
+  vaultAddress: string,
+  campaignId: bigint,
+  active: boolean,
+): PreparedContractCall {
+  if (!isAddress(vaultAddress)) throw new Error('Invalid vault address');
+  if (campaignId <= 0n) throw new Error('Campaign ID must be positive');
+  return {
+    chainId: 11142220,
+    to: vaultAddress,
+    data: encodeFunctionData({
+      abi: campaignVaultAbi,
+      functionName: 'setCampaignActive' as never,
+      args: [campaignId, active],
+    }),
+    value: 0n,
+  };
+}
+
+export function prepareCampaignWithdrawal(vaultAddress: string, campaignId: bigint): PreparedContractCall {
+  if (!isAddress(vaultAddress)) throw new Error('Invalid vault address');
+  if (campaignId <= 0n) throw new Error('Campaign ID must be positive');
+  return {
+    chainId: 11142220,
+    to: vaultAddress,
+    data: encodeFunctionData({
+      abi: campaignVaultAbi,
+      functionName: 'withdrawUnreserved' as never,
+      args: [campaignId],
+    }),
+    value: 0n,
+  };
+}

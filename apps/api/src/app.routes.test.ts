@@ -23,6 +23,7 @@ const config: Config = {
   STRICT_POLICY_MODE: true,
   CLOUDINARY_FOLDER: 'adflow/creatives',
   OPENAI_MODEL: 'gpt-4o-mini',
+  MEM0_BASE_URL: 'https://api.mem0.ai',
 };
 
 const db = {} as Database;
@@ -56,6 +57,10 @@ describe('Fastify route contract', () => {
       ['GET', '/api/v1/campaigns/cmp_1'],
       ['PATCH', '/api/v1/campaigns/cmp_1'],
       ['POST', '/api/v1/campaigns/cmp_1/prepare-funding'],
+      ['POST', '/api/v1/campaigns/cmp_1/prepare-pause'],
+      ['POST', '/api/v1/campaigns/cmp_1/prepare-resume'],
+      ['POST', '/api/v1/campaigns/cmp_1/prepare-end'],
+      ['POST', '/api/v1/campaigns/cmp_1/prepare-withdraw'],
       ['POST', '/api/v1/campaigns/cmp_1/quotes/qte_1/accept-preview'],
       ['POST', '/api/v1/campaigns/cmp_1/quotes/qte_1/prepare-agreement'],
       ['GET', '/api/v1/campaigns/cmp_1/quotes'],
@@ -74,6 +79,28 @@ describe('Fastify route contract', () => {
       ['POST', '/api/v1/agents/agt_1/erc8004/link'],
       ['POST', '/api/v1/campaigns/cmp_1/agent/wake'],
       ['GET', '/api/v1/campaigns/cmp_1/activity/stream'],
+      ['GET', '/api/v1/campaigns/cmp_1/activity'],
+      ['GET', '/api/v1/campaigns/cmp_1/candidates'],
+      ['POST', '/api/v1/campaigns/cmp_1/discovery/run'],
+      ['GET', '/api/v1/campaigns/cmp_1/analytics/summary'],
+      ['GET', '/api/v1/campaigns/cmp_1/analytics/timeseries'],
+      ['GET', '/api/v1/campaigns/cmp_1/agent/runs'],
+      ['GET', '/api/v1/agent-runs/run_1'],
+      ['POST', '/api/v1/campaigns/cmp_1/agent/start'],
+      ['POST', '/api/v1/campaigns/cmp_1/agent/pause'],
+      ['POST', '/api/v1/campaigns/cmp_1/agent/run-now'],
+      ['PATCH', '/api/v1/publishers/me'],
+      ['GET', '/api/v1/publishers/sites'],
+      ['POST', '/api/v1/publishers/sites/site_1/verification'],
+      ['POST', '/api/v1/publishers/sites/site_1/verification/check'],
+      ['GET', '/api/v1/publishers/slots/slot_1'],
+      ['PATCH', '/api/v1/publishers/slots/slot_1'],
+      ['POST', '/api/v1/publishers/slots/slot_1/activate'],
+      ['POST', '/api/v1/publishers/slots/slot_1/pause'],
+      ['GET', '/api/v1/agreements/agr_1'],
+      ['GET', '/api/v1/campaigns/cmp_1/agreements'],
+      ['POST', '/api/v1/quotes/qte_1/accept-preview'],
+      ['POST', '/api/v1/quotes/qte_1/prepare-agreement'],
     ] as const;
 
     for (const [method, url] of requests) {

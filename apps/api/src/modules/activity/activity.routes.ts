@@ -1,7 +1,9 @@
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { DomainError } from '@adflow/shared';
 import type { ApplicationDependencies } from '../../types.js';
 import { requireUser } from '../../shared/auth.js';
+import { response } from '../../shared/http.js';
 import { CampaignRepository } from '../campaigns/campaign.repository.js';
 import { ActivityRepository } from './activity.repository.js';
 
@@ -33,5 +35,17 @@ export async function registerActivityRoutes(app: FastifyInstance, dependencies:
     };
     const interval = setInterval(() => void publish(), 2_000);
     request.raw.on('close', () => clearInterval(interval));
+  });
+
+  app.get('/api/v1/campaigns/:campaignId/activity', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const campaignId = (request.params as { campaignId: string }).campaignId;
+    if (!(await campaignRepository.findById(campaignId, user.id)))
+      throw new DomainError('NOT_FOUND', 'Campaign was not found.');
+    const cursor = z.coerce
+      .date()
+      .optional()
+      .parse((request.query as { cursor?: string }).cursor);
+    return response(request, await activityRepository.list(campaignId, cursor));
   });
 }

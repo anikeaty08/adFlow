@@ -6,7 +6,12 @@ import { requireUser } from '../../shared/auth.js';
 import { response } from '../../shared/http.js';
 import { CampaignRepository } from './campaign.repository.js';
 import { CampaignService } from './campaign.service.js';
-import { prepareCampaignCreation, prepareTokenApproval } from '@adflow/chain';
+import {
+  prepareCampaignActiveUpdate,
+  prepareCampaignCreation,
+  prepareCampaignWithdrawal,
+  prepareTokenApproval,
+} from '@adflow/chain';
 
 export async function registerCampaignRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const service = new CampaignService(new CampaignRepository(dependencies.db));
@@ -81,6 +86,56 @@ export async function registerCampaignRoutes(app: FastifyInstance, dependencies:
         amount,
       ),
       state: 'prepared',
+    });
+  });
+
+  for (const [path, active] of [
+    ['/api/v1/campaigns/:campaignId/prepare-pause', false],
+    ['/api/v1/campaigns/:campaignId/prepare-resume', true],
+  ] as const) {
+    app.post(path, async (request) => {
+      const owner = await requireUser(request, dependencies.db);
+      const campaign = await service.get((request.params as { campaignId: string }).campaignId, owner);
+      if (!dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS || !campaign.onchainCampaignId) {
+        return response(request, { state: 'awaiting_contract_or_funding', contractCall: null });
+      }
+      return response(request, {
+        state: 'prepared',
+        contractCall: prepareCampaignActiveUpdate(
+          dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+          BigInt(campaign.onchainCampaignId),
+          active,
+        ),
+      });
+    });
+  }
+
+  app.post('/api/v1/campaigns/:campaignId/prepare-end', async (request) => {
+    const owner = await requireUser(request, dependencies.db);
+    const campaign = await service.get((request.params as { campaignId: string }).campaignId, owner);
+    if (!dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS || !campaign.onchainCampaignId)
+      return response(request, { state: 'awaiting_contract_or_funding', contractCall: null });
+    return response(request, {
+      state: 'prepared',
+      contractCall: prepareCampaignActiveUpdate(
+        dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+        BigInt(campaign.onchainCampaignId),
+        false,
+      ),
+    });
+  });
+
+  app.post('/api/v1/campaigns/:campaignId/prepare-withdraw', async (request) => {
+    const owner = await requireUser(request, dependencies.db);
+    const campaign = await service.get((request.params as { campaignId: string }).campaignId, owner);
+    if (!dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS || !campaign.onchainCampaignId)
+      return response(request, { state: 'awaiting_contract_or_funding', contractCall: null });
+    return response(request, {
+      state: 'prepared',
+      contractCall: prepareCampaignWithdrawal(
+        dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
+        BigInt(campaign.onchainCampaignId),
+      ),
     });
   });
 }

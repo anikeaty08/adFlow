@@ -52,4 +52,28 @@ export class AgreementRepository {
       .returning();
     return agreement!;
   }
+
+  findOwned(agreementId: string, campaignId: string, ownerUserId: string) {
+    return this.db
+      .select({ agreement: agreements })
+      .from(agreements)
+      .innerJoin(campaigns, eq(agreements.campaignId, campaigns.id))
+      .where(
+        and(
+          eq(agreements.id, agreementId),
+          eq(agreements.campaignId, campaignId),
+          eq(campaigns.ownerUserId, ownerUserId),
+        ),
+      )
+      .limit(1)
+      .then(([row]) => row?.agreement);
+  }
+
+  listOwned(campaignId: string, ownerUserId: string) {
+    return this.db
+      .select({ agreement: agreements })
+      .from(agreements)
+      .innerJoin(campaigns, eq(agreements.campaignId, campaigns.id))
+      .where(and(eq(agreements.campaignId, campaignId), eq(campaigns.ownerUserId, ownerUserId)));
+  }
 }

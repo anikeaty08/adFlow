@@ -40,13 +40,18 @@ const schema = z
       .string()
       .regex(/^0x[a-fA-F0-9]{40}$/)
       .optional(),
-    SETTLEMENT_OPERATOR_PRIVATE_KEY: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional(),
+    SETTLEMENT_OPERATOR_PRIVATE_KEY: z
+      .string()
+      .regex(/^0x[0-9a-fA-F]{64}$/)
+      .optional(),
     CHAIN_WRITE_MODE: z.literal('frontend_wallet').default('frontend_wallet'),
     REDIS_URL: z.url().optional(),
     UPSTASH_REDIS_REST_URL: z.url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
     OPENAI_API_KEY: z.string().min(1).optional(),
     OPENAI_MODEL: z.literal('gpt-4o-mini').default('gpt-4o-mini'),
+    MEM0_API_KEY: z.string().min(1).optional(),
+    MEM0_BASE_URL: z.url().default('https://api.mem0.ai'),
     X402_FACILITATOR_URL: z.url().optional(),
     MAINNET_ENABLED: z
       .enum(['true', 'false'])
@@ -71,6 +76,11 @@ const schema = z
   });
 export type Config = z.infer<typeof schema>;
 export const loadConfig = (): Config => {
+  const rawNetwork = process.env.CELO_NETWORK?.toLowerCase();
+  const normalizedNetwork = rawNetwork === 'celosepolia' ? 'sepolia' : rawNetwork;
+  const rawOperatorKey = process.env.SETTLEMENT_OPERATOR_PRIVATE_KEY;
+  const normalizedOperatorKey =
+    rawOperatorKey && !rawOperatorKey.startsWith('0x') ? `0x${rawOperatorKey}` : rawOperatorKey;
   const environment = {
     ...process.env,
     SESSION_SECRET: process.env.SESSION_SECRET ?? randomBytes(32).toString('hex'),
@@ -80,6 +90,10 @@ export const loadConfig = (): Config => {
     REDIS_URL: process.env.REDIS_URL,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+    CELO_NETWORK: normalizedNetwork,
+    SETTLEMENT_OPERATOR_PRIVATE_KEY: normalizedOperatorKey,
+    MEM0_API_KEY: process.env.MEM0_API_KEY,
+    MEM0_BASE_URL: process.env.MEM0_BASE_URL,
   };
   const parsed = schema.parse(environment);
   if (!parsed.REDIS_URL && parsed.UPSTASH_REDIS_REST_URL && parsed.UPSTASH_REDIS_REST_TOKEN) {

@@ -1,9 +1,4 @@
-import {
-  createWalletClient,
-  http,
-  type Address,
-  type Hash,
-} from 'viem';
+import { createWalletClient, http, type Address, type Hash } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { adflowSettlementAbi, celoSepolia } from '@adflow/chain';
 import type { Config } from '../../config.js';
@@ -32,7 +27,11 @@ export class ViemSettlementExecutor implements SettlementExecutor {
       throw new Error('ADFLOW_SETTLEMENT_ADDRESS is required for settlement submission');
     }
     this.account = privateKeyToAccount(config.SETTLEMENT_OPERATOR_PRIVATE_KEY as `0x${string}`);
-    this.client = createWalletClient({ account: this.account, chain: celoSepolia, transport: http(config.CELO_RPC_URL) });
+    this.client = createWalletClient({
+      account: this.account,
+      chain: celoSepolia,
+      transport: http(config.CELO_RPC_URL),
+    });
   }
 
   submit(input: SettlementSubmission): Promise<Hash> {

@@ -12,4 +12,17 @@ export class ActivityRepository {
       .orderBy(asc(activityEvents.createdAt))
       .limit(100);
   }
+
+  list(campaignId: string, after?: Date) {
+    return this.db
+      .select()
+      .from(activityEvents)
+      .where(
+        after
+          ? and(eq(activityEvents.campaignId, campaignId), gt(activityEvents.createdAt, after))
+          : eq(activityEvents.campaignId, campaignId),
+      )
+      .orderBy(asc(activityEvents.createdAt))
+      .limit(100);
+  }
 }

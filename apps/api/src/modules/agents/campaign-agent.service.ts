@@ -11,6 +11,7 @@ import { AgreementPolicyService } from '../agreements/policy.service.js';
 import { OutboxRepository } from '../outbox/outbox.repository.js';
 import { AgentRunRepository } from './agent-run.repository.js';
 import type { CampaignModelGateway } from './openai-model.gateway.js';
+import type { AgentMemoryGateway } from './mem0.memory.gateway.js';
 
 type CampaignRecord = typeof campaigns.$inferSelect;
 type QuoteRecord = typeof quotes.$inferSelect;
@@ -27,6 +28,7 @@ export class CampaignAgentService {
   constructor(
     private readonly db: Database,
     private readonly model: CampaignModelGateway,
+    private readonly memory: AgentMemoryGateway = { search: async () => [], add: async () => undefined },
   ) {
     this.runRepository = new AgentRunRepository(db);
     this.outbox = new OutboxRepository(db);
@@ -39,11 +41,16 @@ export class CampaignAgentService {
     let campaign: CampaignRecord | undefined;
     let campaignQuotes: QuoteRecord[] = [];
     let selectedQuote: QuoteRecord | undefined;
+    let memories: Awaited<ReturnType<AgentMemoryGateway['search']>> = [];
     const graph = createDurableCampaignGraph({
       loadCampaign: async (id) => {
         campaign = await this.loadCampaign(id);
       },
-      observeMarket: async () => undefined,
+      observeMarket: async () => {
+        memories = await this.memory.search(campaign?.objectiveText ?? 'campaign publisher preferences', {
+          campaignId,
+        });
+      },
       discoverPublishers: async () => [...new Set(campaignQuotes.map((quote) => quote.publisherAgentId))],
       rankPublishers: async (_id, publisherIds) => publisherIds,
       requestQuotes: async () => {
@@ -56,6 +63,7 @@ export class CampaignAgentService {
           campaignId,
           objective: campaign.objectiveText,
           candidateIds: quoteIds,
+          memories: memories.map((item) => item.memory),
         });
         selectedQuote = proposal.candidateId
           ? campaignQuotes.find((quote) => quote.id === proposal.candidateId)
@@ -74,6 +82,9 @@ export class CampaignAgentService {
 
     try {
       const state = await graph.invoke({ campaignId, agentRunId: begun.run.id });
+      await this.memory.add(`Campaign run ${begun.run.id} completed with status ${state.status}.`, {
+        campaignId,
+      });
       await this.runRepository.updateState(
         begun.run.id,
         this.databaseStatus(state.status),

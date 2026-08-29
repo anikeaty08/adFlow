@@ -5,6 +5,7 @@ import type { CampaignProposal } from '@adflow/agent-core';
 export type CampaignPlanningInput = {
   campaignId: string;
   candidateIds: string[];
+  memories?: string[];
   objective: string;
 };
 
@@ -40,6 +41,7 @@ export class OpenAiCampaignModelGateway implements CampaignModelGateway {
       campaignId: input.campaignId,
       objective: input.objective,
       candidateIds: input.candidateIds,
+      contextualMemories: input.memories ?? [],
     });
     const completion = await this.client.chat.completions.create({
       model: this.model,

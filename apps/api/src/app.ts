@@ -16,6 +16,8 @@ import { registerAgreementRoutes } from './modules/agreements/agreement.routes.j
 import { registerAgentRoutes } from './modules/agents/agent.routes.js';
 import { registerQuoteRoutes } from './modules/quotes/quote.routes.js';
 import { registerActivityRoutes } from './modules/activity/activity.routes.js';
+import { registerPublicRoutes } from './modules/public/public.routes.js';
+import { registerOperationsRoutes } from './modules/operations/operations.routes.js';
 
 export async function buildApp(dependencies: ApplicationDependencies) {
   const app = Fastify({
@@ -62,5 +64,7 @@ export async function buildApp(dependencies: ApplicationDependencies) {
   await registerAgentRoutes(app, dependencies);
   await registerQuoteRoutes(app, dependencies);
   await registerActivityRoutes(app, dependencies);
+  await registerPublicRoutes(app, dependencies);
+  await registerOperationsRoutes(app, dependencies);
   return app;
 }

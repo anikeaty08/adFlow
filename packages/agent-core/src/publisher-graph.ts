@@ -11,7 +11,9 @@ const publisherState = new StateSchema({
 
 export type PublisherGraphDependencies = {
   checkAdvertiser(offerId: string, advertiserId: string): Promise<boolean>;
-  evaluateOffer(offerId: string): Promise<{ decision: 'ACCEPT' | 'COUNTER' | 'REJECT'; counterRateAtomic?: string }>;
+  evaluateOffer(
+    offerId: string,
+  ): Promise<{ decision: 'ACCEPT' | 'COUNTER' | 'REJECT'; counterRateAtomic?: string }>;
 };
 
 /** Publisher negotiation workflow. It never signs transactions or moves funds. */

@@ -6,8 +6,15 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   if (!deployer) throw new Error('DEPLOYER_PRIVATE_KEY is required for Celo Sepolia deployment.');
 
-  const settlementOperator = process.env.SETTLEMENT_OPERATOR_ADDRESS;
-  if (!settlementOperator) throw new Error('SETTLEMENT_OPERATOR_ADDRESS is required for deployment.');
+  const settlementOperator =
+    process.env.SETTLEMENT_OPERATOR_ADDRESS ??
+    (process.env.SETTLEMENT_OPERATOR_PRIVATE_KEY
+      ? new ethers.Wallet(process.env.SETTLEMENT_OPERATOR_PRIVATE_KEY).address
+      : undefined);
+  if (!settlementOperator)
+    throw new Error(
+      'SETTLEMENT_OPERATOR_PRIVATE_KEY or SETTLEMENT_OPERATOR_ADDRESS is required for deployment.',
+    );
 
   const Vault = await ethers.getContractFactory('CampaignVault');
   const vault = await Vault.deploy(deployer.address, settlementOperator);

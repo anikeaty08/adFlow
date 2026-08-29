@@ -73,14 +73,37 @@ export class PublisherRepository {
       .where(eq(publishers.ownerUserId, ownerUserId));
   }
 
+  async listSites(ownerUserId: string) {
+    return this.db
+      .select({ site: publisherSites })
+      .from(publisherSites)
+      .innerJoin(publishers, eq(publisherSites.publisherId, publishers.id))
+      .where(eq(publishers.ownerUserId, ownerUserId));
+  }
+
   async findSlotOwned(slotId: string, ownerUserId: string) {
     const [row] = await this.db
       .select({ slot: adSlots })
       .from(adSlots)
       .innerJoin(publisherSites, eq(adSlots.siteId, publisherSites.id))
       .innerJoin(publishers, eq(publisherSites.publisherId, publishers.id))
-      .where(eq(publishers.ownerUserId, ownerUserId));
+      .where(and(eq(adSlots.id, slotId), eq(publishers.ownerUserId, ownerUserId)));
     return row?.slot;
+  }
+
+  async updatePublisher(ownerUserId: string, name: string, payoutWalletAddress: string) {
+    const publisher = await this.findMine(ownerUserId);
+    if (!publisher) return undefined;
+    const [updated] = await this.db
+      .update(publishers)
+      .set({ name, payoutWalletAddress })
+      .where(eq(publishers.id, publisher.id))
+      .returning();
+    return updated;
+  }
+
+  async findSlot(slotId: string, ownerUserId: string) {
+    return this.findSlotOwned(slotId, ownerUserId);
   }
 
   async setSlotStatus(slotId: string, status: 'ACTIVE' | 'PAUSED') {

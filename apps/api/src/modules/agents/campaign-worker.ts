@@ -4,6 +4,7 @@ import type { Database } from '@adflow/db';
 import type { Config } from '../../config.js';
 import { campaignWakeupJob, type CampaignWakeupPayload } from './campaign-queue.js';
 import { CampaignAgentService } from './campaign-agent.service.js';
+import { Mem0MemoryGateway } from './mem0.memory.gateway.js';
 import {
   DeterministicCampaignModelGateway,
   OpenAiCampaignModelGateway,
@@ -17,7 +18,7 @@ export function startCampaignWorker(config: Config, db: Database) {
   const model: CampaignModelGateway = config.OPENAI_API_KEY
     ? new OpenAiCampaignModelGateway(config.OPENAI_API_KEY, config.OPENAI_MODEL)
     : new DeterministicCampaignModelGateway();
-  const service = new CampaignAgentService(db, model);
+  const service = new CampaignAgentService(db, model, new Mem0MemoryGateway(config));
 
   return new Worker<CampaignWakeupPayload>(
     'adflow-campaigns',

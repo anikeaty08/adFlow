@@ -5,6 +5,8 @@ import type { ApplicationDependencies } from '../../types.js';
 import { requireUser } from '../../shared/auth.js';
 import { response } from '../../shared/http.js';
 import { PublisherRepository } from './publisher.repository.js';
+import { adSlots } from '@adflow/db';
+import { eq } from 'drizzle-orm';
 
 export async function registerPublisherRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const repository = new PublisherRepository(dependencies.db);
@@ -25,6 +27,16 @@ export async function registerPublisherRoutes(app: FastifyInstance, dependencies
   app.get('/api/v1/publishers/me', async (request) => {
     const user = await requireUser(request, dependencies.db);
     const publisher = await repository.findMine(user.id);
+    if (!publisher) throw new DomainError('NOT_FOUND', 'Publisher profile was not found.');
+    return response(request, publisher);
+  });
+
+  app.patch('/api/v1/publishers/me', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const input = z
+      .object({ name: z.string().min(2).max(120), payoutWalletAddress: address })
+      .parse(request.body);
+    const publisher = await repository.updatePublisher(user.id, input.name, input.payoutWalletAddress);
     if (!publisher) throw new DomainError('NOT_FOUND', 'Publisher profile was not found.');
     return response(request, publisher);
   });
@@ -60,8 +72,71 @@ export async function registerPublisherRoutes(app: FastifyInstance, dependencies
     return response(request, await repository.addSlot({ siteId, ...input }));
   });
 
+  app.get('/api/v1/publishers/sites', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    return response(request, await repository.listSites(user.id));
+  });
+
+  app.post('/api/v1/publishers/sites/:siteId/verification', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const site = await repository.findSiteOwned((request.params as { siteId: string }).siteId, user.id);
+    if (!site) throw new DomainError('NOT_FOUND', 'Publisher site was not found.');
+    return response(request, {
+      siteId: site.id,
+      method: site.verificationMethod,
+      challenge: site.verificationChallengeHash,
+      instructions: 'Publish the challenge using the selected verification method, then call check.',
+    });
+  });
+
+  app.post('/api/v1/publishers/sites/:siteId/verification/check', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const site = await repository.findSiteOwned((request.params as { siteId: string }).siteId, user.id);
+    if (!site) throw new DomainError('NOT_FOUND', 'Publisher site was not found.');
+    return response(request, { siteId: site.id, status: site.status, verified: site.status === 'VERIFIED' });
+  });
+
   app.get('/api/v1/publishers/slots', async (request) => {
     const user = await requireUser(request, dependencies.db);
     return response(request, await repository.listSlots(user.id));
   });
+
+  app.get('/api/v1/publishers/slots/:slotId', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const slot = await repository.findSlot((request.params as { slotId: string }).slotId, user.id);
+    if (!slot) throw new DomainError('NOT_FOUND', 'Ad slot was not found.');
+    return response(request, slot);
+  });
+
+  app.patch('/api/v1/publishers/slots/:slotId', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const slotId = (request.params as { slotId: string }).slotId;
+    const slot = await repository.findSlot(slotId, user.id);
+    if (!slot) throw new DomainError('NOT_FOUND', 'Ad slot was not found.');
+    const input = z
+      .object({
+        name: z.string().min(2).max(120).optional(),
+        categories: z.array(z.string()).max(30).optional(),
+      })
+      .parse(request.body);
+    const [updated] = await dependencies.db
+      .update(adSlots)
+      .set(input)
+      .where(eq(adSlots.id, slotId))
+      .returning();
+    return response(request, updated);
+  });
+
+  for (const [path, status] of [
+    ['/api/v1/publishers/slots/:slotId/activate', 'ACTIVE'],
+    ['/api/v1/publishers/slots/:slotId/pause', 'PAUSED'],
+  ] as const) {
+    app.post(path, async (request) => {
+      const user = await requireUser(request, dependencies.db);
+      const slotId = (request.params as { slotId: string }).slotId;
+      if (!(await repository.findSlot(slotId, user.id)))
+        throw new DomainError('NOT_FOUND', 'Ad slot was not found.');
+      return response(request, await repository.setSlotStatus(slotId, status));
+    });
+  }
 }
