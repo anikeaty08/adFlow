@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { apiRequest } from '@/lib/api/client';
 
 type QuoteRequest = {
@@ -14,6 +15,9 @@ type QuoteRequest = {
 };
 
 export function PublisherQuoteRequests() {
+  const queryClient = useQueryClient();
+  const [rates, setRates] = useState<Record<string, string>>({});
+  const [status, setStatus] = useState('');
   const query = useQuery({
     queryKey: ['publisher-quote-requests'],
     queryFn: () => apiRequest<QuoteRequest[]>('/api/v1/publishers/me/quote-requests'),
@@ -27,6 +31,22 @@ export function PublisherQuoteRequests() {
     );
   if (!query.data.length) return <p style={{ color: 'var(--muted)' }}>No pending quote requests.</p>;
 
+  async function evaluate(requestId: string) {
+    setStatus('Submitting publisher decision...');
+    try {
+      const rate = Number(rates[requestId] ?? '0.02');
+      if (!Number.isFinite(rate) || rate <= 0) throw new Error('Enter a positive USDC rate.');
+      await apiRequest(`/api/v1/publishers/me/quote-requests/${requestId}/evaluate`, {
+        body: JSON.stringify({ proposedRateAtomic: String(Math.round(rate * 1_000_000)) }),
+        method: 'POST',
+      });
+      setStatus('Decision evaluated against publisher policy.');
+      await queryClient.invalidateQueries({ queryKey: ['publisher-quote-requests'] });
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Decision could not be evaluated.');
+    }
+  }
+
   return (
     <div style={{ borderTop: '1px solid var(--line)' }}>
       {query.data.map((request) => (
@@ -36,8 +56,26 @@ export function PublisherQuoteRequests() {
             Slot {request.slotId} · {request.status} · requested{' '}
             {new Date(request.requestedAt).toLocaleString()}
           </p>
+          <div style={{ alignItems: 'end', display: 'flex', gap: 10, marginTop: '0.8rem' }}>
+            <label style={{ maxWidth: 180 }}>
+              Rate (USDC)
+              <input
+                min="0.000001"
+                onChange={(event) =>
+                  setRates((current) => ({ ...current, [request.id]: event.target.value }))
+                }
+                step="0.001"
+                type="number"
+                value={rates[request.id] ?? '0.020'}
+              />
+            </label>
+            <button className="buttonSecondary" onClick={() => void evaluate(request.id)} type="button">
+              Evaluate offer
+            </button>
+          </div>
         </article>
       ))}
+      {status ? <p style={{ color: 'var(--muted)' }}>{status}</p> : null}
     </div>
   );
 }
