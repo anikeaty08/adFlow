@@ -3,7 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { getCampaign } from '@/lib/api/campaigns';
-import { ActivityFeed, MetricRow } from '@/components/studio/studio-screen';
+import { CampaignLiveActivity } from '@/components/agent/campaign-live-activity';
+import { MetricRow } from '@/components/studio/studio-screen';
 import { FundCampaignButton } from '@/components/wallet/fund-campaign-button';
 
 function formatUsdc(atomic: string) {
@@ -72,7 +73,7 @@ export function CampaignCommandCenter({ campaignId }: { campaignId: string }) {
           policy checks and your wallet authorization.
         </p>
       </div>
-      <ActivityFeed />
+      <CampaignLiveActivity campaignId={campaignId} />
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         <FundCampaignButton campaignId={campaignId} />
         <Link className="buttonSecondary" href={`/app/campaigns/${campaignId}/agent`}>

@@ -6,6 +6,8 @@ import { requireUser } from '../../shared/auth.js';
 import { response } from '../../shared/http.js';
 import { AgreementPolicyService } from './policy.service.js';
 import { AgreementRepository } from './agreement.repository.js';
+import { agreements, campaigns, settlementEpochs } from '@adflow/db';
+import { and, eq } from 'drizzle-orm';
 import { prepareAgreementCreation } from '@adflow/chain';
 
 export async function registerAgreementRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
@@ -105,5 +107,20 @@ export async function registerAgreementRoutes(app: FastifyInstance, dependencies
     if (!(await repository.campaign(campaignId, user.id)))
       throw new DomainError('NOT_FOUND', 'Campaign was not found.');
     return response(request, await repository.listOwned(campaignId, user.id));
+  });
+
+  app.get('/api/v1/campaigns/:campaignId/settlements', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const campaignId = (request.params as { campaignId: string }).campaignId;
+    const rows = await dependencies.db
+      .select({ epoch: settlementEpochs })
+      .from(settlementEpochs)
+      .innerJoin(agreements, eq(settlementEpochs.agreementId, agreements.id))
+      .innerJoin(campaigns, eq(agreements.campaignId, campaigns.id))
+      .where(and(eq(agreements.campaignId, campaignId), eq(campaigns.ownerUserId, user.id)));
+    return response(
+      request,
+      rows.map(({ epoch }) => epoch),
+    );
   });
 }

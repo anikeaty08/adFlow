@@ -84,6 +84,14 @@ export async function registerQuoteRoutes(app: FastifyInstance, dependencies: Ap
       quoteRequestId: quoteRequest.request.id,
       campaignId: quoteRequest.campaign.id,
       decision,
+      quoteContext: {
+        publisherAgentId: quoteRequest.request.publisherAgentId,
+        slotId: quoteRequest.request.slotId,
+        pricingModel: quoteRequest.campaign.pricingModel,
+        maxAllocationAtomic: quoteRequest.campaign.budgetPlannedAtomic,
+        publisherWallet: quoteRequest.agent.walletAddress,
+        validUntil: quoteRequest.campaign.endAt.toISOString(),
+      },
     });
   });
   app.post('/agent/v1/quotes', async (request) => {

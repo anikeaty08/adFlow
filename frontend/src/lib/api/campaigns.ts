@@ -32,6 +32,37 @@ export type CampaignDetail = CampaignSummary & {
   } | null;
 };
 
+export type CampaignAnalytics = {
+  impressions: number;
+  verifiedImpressions: number;
+  clicks: number;
+  verifiedClicks: number;
+  ctr: number;
+};
+
+export type CampaignCandidate = {
+  publisherAgentId: string;
+  slotId: string;
+  walletAddress: string;
+  hardFilter: { eligible: boolean; reasonCodes: string[] };
+  score: number;
+};
+
+export type SettlementEpoch = {
+  id: string;
+  agreementId: string;
+  epochKey: string;
+  windowStart: string;
+  windowEnd: string;
+  verifiedUnits: number;
+  evidenceRoot: string;
+  status: string;
+  chainTxHash: string | null;
+  onchainAmountAtomic: string | null;
+  createdAt: string;
+  confirmedAt: string | null;
+};
+
 export type CreateCampaignInput = {
   name: string;
   objectiveText: string;
@@ -53,8 +84,19 @@ export const listCampaignActivity = (campaignId: string) =>
   apiRequest<CampaignActivity[]>(`/api/v1/campaigns/${campaignId}/activity`);
 export const getCampaign = (campaignId: string) =>
   apiRequest<CampaignDetail>(`/api/v1/campaigns/${campaignId}`);
+export const getCampaignAnalytics = (campaignId: string) =>
+  apiRequest<CampaignAnalytics>(`/api/v1/campaigns/${campaignId}/analytics/summary`);
+export const getCampaignCandidates = (campaignId: string) =>
+  apiRequest<CampaignCandidate[]>(`/api/v1/campaigns/${campaignId}/candidates`);
+export const listCampaignSettlements = (campaignId: string) =>
+  apiRequest<SettlementEpoch[]>(`/api/v1/campaigns/${campaignId}/settlements`);
 export const prepareCampaignFunding = (campaignId: string) =>
   apiRequest(`/api/v1/campaigns/${campaignId}/prepare-funding`, { method: 'POST' });
+export const confirmCampaignFunding = (campaignId: string, txHash: string) =>
+  apiRequest(`/api/v1/campaigns/${campaignId}/confirm-funding`, {
+    body: JSON.stringify({ txHash }),
+    method: 'POST',
+  });
 
 export const createCampaign = (input: CreateCampaignInput) =>
   apiRequest<CampaignSummary>('/api/v1/campaigns', { body: JSON.stringify(input), method: 'POST' });

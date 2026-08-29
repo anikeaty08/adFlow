@@ -159,6 +159,9 @@ importers:
 
   frontend:
     dependencies:
+      '@adflow/shared':
+        specifier: workspace:*
+        version: link:../backend/packages/shared
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.9.1(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.86.0(react@19.2.8))(zod@4.4.3)

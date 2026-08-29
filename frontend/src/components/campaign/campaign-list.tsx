@@ -10,7 +10,7 @@ export function CampaignList() {
   if (query.isError)
     return (
       <p style={{ color: 'var(--muted)' }}>
-        Connect your wallet to load real campaigns. Studio demo routes remain available.
+        Connect and sign in with your wallet to load campaigns owned by this account.
       </p>
     );
   if (!query.data?.length)

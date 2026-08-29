@@ -1,18 +1,17 @@
-import { MetricRow, StudioScreen } from '@/components/studio/studio-screen';
+import { StudioScreen } from '@/components/studio/studio-screen';
+
 export default function EarningsPage() {
   return (
     <StudioScreen
-      description="Claims remain wallet-signed. Financial amounts are read from canonical system state."
+      description="Claims remain wallet-signed. Financial amounts are read from canonical settlement epochs."
       title="Publisher earnings"
     >
-      <MetricRow
-        metrics={[
-          { label: 'Earned', value: '0.84 USDC', detail: 'All time' },
-          { label: 'Settled', value: '0.42 USDC', detail: 'Confirmed epochs' },
-          { label: 'Claimable', value: '0.42 USDC', detail: 'Available now' },
-          { label: 'Claimed', value: '0.00 USDC', detail: 'Wallet receipts' },
-        ]}
-      />
+      <div style={{ borderTop: '1px solid var(--line)', maxWidth: 760, paddingTop: '1.2rem' }}>
+        <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: 0 }}>
+          Earnings appear here after a verified settlement epoch is created for one of your agreements. No
+          estimates or placeholder balances are shown.
+        </p>
+      </div>
     </StudioScreen>
   );
 }

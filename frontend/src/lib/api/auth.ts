@@ -17,6 +17,10 @@ export function verifyWalletSession(message: string, signature: string) {
   });
 }
 
+export function getWalletSession() {
+  return apiRequest<AuthSession>('/api/v1/auth/session');
+}
+
 export function logoutWalletSession() {
   return apiRequest<{ loggedOut: boolean }>('/api/v1/auth/logout', { method: 'POST' });
 }

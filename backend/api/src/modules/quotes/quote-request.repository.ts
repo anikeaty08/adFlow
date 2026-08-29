@@ -55,6 +55,7 @@ export class QuoteRequestRepository {
         policy: campaignPolicies,
         slot: adSlots,
         publisher: publishers,
+        agent: agents,
       })
       .from(quoteRequests)
       .innerJoin(agents, eq(quoteRequests.publisherAgentId, agents.id))
