@@ -58,6 +58,12 @@ export const requestSiteVerification = (siteId: string) =>
     { method: 'POST' },
   );
 
+export const checkSiteVerification = (siteId: string) =>
+  apiRequest<{ siteId: string; status: string; verified: boolean }>(
+    `/api/v1/publishers/sites/${siteId}/verification/check`,
+    { method: 'POST' },
+  );
+
 export const createPublisherSlot = (
   siteId: string,
   input: {
