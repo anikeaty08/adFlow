@@ -1,12 +1,14 @@
-import { ActivityFeed, StudioScreen } from '@/components/studio/studio-screen';
+import { StudioScreen } from '@/components/studio/studio-screen';
 
 export default function ActivityPage() {
   return (
     <StudioScreen
-      description="A normalized, account-scoped record of agent actions, policy decisions, verification, and chain settlement."
+      description="Activity is attached to each campaign so every event remains account-scoped and traceable."
       title="Activity"
     >
-      <ActivityFeed />
+      <p style={{ color: 'var(--muted)', lineHeight: 1.6 }}>
+        Open a campaign command center to view its live agent, policy, verification, and settlement events.
+      </p>
     </StudioScreen>
   );
 }

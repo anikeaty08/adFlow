@@ -1,5 +1,4 @@
-import type { ComponentType } from 'react';
-import { IconArrowUpRight, IconCircleCheck, IconClock, IconShieldCheck } from '@tabler/icons-react';
+import { IconArrowUpRight } from '@tabler/icons-react';
 import Link from 'next/link';
 import styles from './studio-screen.module.css';
 
@@ -46,27 +45,6 @@ export function MetricRow({ metrics }: { metrics: Array<{ label: string; value: 
           <span>{metric.label}</span>
           <strong>{metric.value}</strong>
           <p>{metric.detail}</p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-export function ActivityFeed() {
-  const items: Array<[ComponentType<{ size?: number }>, string, string]> = [
-    [IconCircleCheck, 'Quote accepted', 'Publisher #52 at 0.031 USDC CPC'],
-    [IconShieldCheck, 'Policy passed', 'Daily allocation limit and reputation rule confirmed'],
-    [IconClock, 'Agent wake scheduled', 'Next performance observation in 28 minutes'],
-  ];
-  return (
-    <div className={styles.activity}>
-      {items.map(([Icon, title, detail]) => (
-        <article key={title}>
-          <Icon size={19} />
-          <div>
-            <strong>{title}</strong>
-            <p>{detail}</p>
-          </div>
         </article>
       ))}
     </div>
