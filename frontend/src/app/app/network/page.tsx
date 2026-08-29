@@ -1,6 +1,7 @@
 'use client';
 
 import { IconAdjustments, IconX } from '@tabler/icons-react';
+import { LiveInventoryList } from '@/components/network/live-inventory-list';
 import { MarketplaceSceneClient } from '@/components/scene/marketplace-scene-client';
 import { useSceneStore } from '@/components/scene/scene-store';
 import { marketplaceNodes } from '@/components/scene/marketplace-data';
@@ -32,6 +33,7 @@ export default function NetworkPage() {
         <span>Verification evidence</span>
         <span>Celo settlement</span>
       </aside>
+      <LiveInventoryList />
       {selectedNode ? (
         <aside className={styles.drawer}>
           <button aria-label="Close node detail" onClick={() => setSelectedNodeId(null)} type="button">

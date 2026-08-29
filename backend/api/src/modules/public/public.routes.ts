@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
-import { eq } from 'drizzle-orm';
-import { adSlots, agreements, type Database } from '@adflow/db';
+import { and, eq } from 'drizzle-orm';
+import { adSlots, agents, agreements, publishers, publisherSites } from '@adflow/db';
+import { requireUser } from '../../shared/auth.js';
 import { response } from '../../shared/http.js';
 import type { ApplicationDependencies } from '../../types.js';
 
@@ -22,6 +23,29 @@ export async function registerPublicRoutes(app: FastifyInstance, dependencies: A
       .where(eq(adSlots.status, 'ACTIVE'))
       .limit(100);
     return response(request, { slots });
+  });
+
+  app.get('/api/v1/network/inventory', async (request) => {
+    await requireUser(request, dependencies.db);
+    const rows = await dependencies.db
+      .select({
+        slotId: adSlots.id,
+        slotName: adSlots.name,
+        format: adSlots.format,
+        categories: adSlots.categories,
+        floorCpcAtomic: adSlots.floorCpcAtomic,
+        siteDomain: publisherSites.normalizedDomain,
+        publisherName: publishers.name,
+        publisherAgentId: agents.id,
+        publisherStatus: publishers.status,
+      })
+      .from(adSlots)
+      .innerJoin(publisherSites, eq(adSlots.siteId, publisherSites.id))
+      .innerJoin(publishers, eq(publisherSites.publisherId, publishers.id))
+      .leftJoin(agents, and(eq(agents.publisherId, publishers.id), eq(agents.role, 'PUBLISHER')))
+      .where(and(eq(adSlots.status, 'ACTIVE'), eq(publisherSites.status, 'VERIFIED')))
+      .limit(100);
+    return response(request, rows);
   });
 
   app.get('/agent/v1/inventory/premium', async (_request, reply) => {
