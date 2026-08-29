@@ -67,9 +67,16 @@ export class CampaignAgentService {
         campaign = await this.loadCampaign(id);
       },
       observeMarket: async () => {
-        memories = await this.memory.search(campaign?.objectiveText ?? 'campaign publisher preferences', {
-          campaignId,
-        });
+        const query = campaign?.objectiveText ?? 'campaign publisher preferences';
+        const [advertiserMemories, campaignMemories] = await Promise.all([
+          this.memory.search(query, { userId: campaign?.ownerUserId }),
+          this.memory.search(query, { campaignId }),
+        ]);
+        // Mem0 may return the same item through multiple scopes. Keep the most relevant occurrence
+        // while retaining the database and Celo contracts as the only financial source of truth.
+        memories = [...advertiserMemories, ...campaignMemories].filter(
+          (memory, index, all) => all.findIndex((candidate) => candidate.memory === memory.memory) === index,
+        );
       },
       discoverPublishers: async () => {
         eligibleInventory = await this.loadEligibleInventory(campaign!);
