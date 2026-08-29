@@ -3,6 +3,7 @@
 import { IconArrowRight, IconShieldCheck } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
+import { ApiError } from '@/lib/api/client';
 import {
   createPublisher,
   createPublisherSite,
@@ -27,7 +28,8 @@ export function PublisherOnboardingForm() {
     try {
       try {
         await createPublisher({ name, payoutWalletAddress: address });
-      } catch {
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.status !== 409) throw error;
         await getPublisherProfile();
       }
 
