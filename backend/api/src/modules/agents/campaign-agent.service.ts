@@ -77,6 +77,15 @@ export class CampaignAgentService {
           campaignId,
           objective: campaign.objectiveText,
           candidateIds: quoteIds,
+          candidates: campaignQuotes
+            .filter((quote) => quoteIds.includes(quote.id))
+            .map((quote) => ({
+              id: quote.id,
+              publisherAgentId: quote.publisherAgentId,
+              rateAtomic: quote.rateAtomic,
+              maxAllocationAtomic: quote.maxAllocationAtomic,
+              validUntil: quote.validUntil.toISOString(),
+            })),
           memories: memories.map((item) => item.memory),
         });
         selectedQuote = proposal.candidateId

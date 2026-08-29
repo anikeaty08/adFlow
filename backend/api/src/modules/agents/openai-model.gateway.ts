@@ -6,6 +6,15 @@ import { buildCampaignAgentSystemPrompt } from './campaign-agent.prompt.js';
 export type CampaignPlanningInput = {
   campaignId: string;
   candidateIds: string[];
+  candidates?: Array<{
+    id: string;
+    publisherAgentId: string;
+    rateAtomic: string;
+    maxAllocationAtomic: string;
+    validUntil: string;
+    reputationScore?: number;
+    deterministicScore?: number;
+  }>;
   memories?: string[];
   objective: string;
 };
@@ -34,7 +43,7 @@ export class OpenAiCampaignModelGateway implements CampaignModelGateway {
     const observation = JSON.stringify({
       campaignId: input.campaignId,
       objective: input.objective,
-      candidateIds: input.candidateIds,
+      candidates: input.candidates ?? input.candidateIds.map((id) => ({ id, publisherAgentId: 'unknown' })),
       contextualMemories: input.memories ?? [],
     });
     const completion = await this.client.chat.completions.create({

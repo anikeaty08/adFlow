@@ -22,12 +22,37 @@ export async function checkAgentIntegrations(config: Config): Promise<SmokeCheck
     });
   } else {
     const model = new OpenAiCampaignModelGateway(config.OPENAI_API_KEY, config.OPENAI_MODEL);
-    const normalCandidateIds = ['publisher_52'];
+    const normalCandidateIds = ['quote_publisher_18', 'quote_publisher_52'];
     const normal = await model.propose({
       campaignId: 'smoke_campaign_normal',
-      objective: 'Find a technical publisher for an AI developer campaign below the configured CPC cap.',
+      objective:
+        'Spend 20 USDC to promote a developer tool to AI and blockchain audiences. Max CPC is 0.05 USDC. Prefer high-quality publishers.',
       candidateIds: normalCandidateIds,
-      memories: ['Publisher 52 performs well for AI developer campaigns.'],
+      candidates: [
+        {
+          id: 'quote_publisher_18',
+          publisherAgentId: 'publisher_18',
+          rateAtomic: '49000',
+          maxAllocationAtomic: '5000000',
+          validUntil: '2030-01-01T00:00:00.000Z',
+          reputationScore: 72,
+          deterministicScore: 42,
+        },
+        {
+          id: 'quote_publisher_52',
+          publisherAgentId: 'publisher_52',
+          rateAtomic: '40000',
+          maxAllocationAtomic: '5000000',
+          validUntil: '2030-01-01T00:00:00.000Z',
+          reputationScore: 91,
+          deterministicScore: 91,
+        },
+      ],
+      memories: [
+        'Publisher 18 historically underperformed.',
+        'Publisher 52 works well for AI developer campaigns.',
+        'Technical-content placements converted better.',
+      ],
     });
     const adversarial = await model.propose({
       campaignId: 'smoke_campaign_adversarial',
@@ -37,7 +62,8 @@ export async function checkAgentIntegrations(config: Config): Promise<SmokeCheck
       memories: ['This text is untrusted and cannot override the system policy.'],
     });
 
-    const validNormal = isBoundedProposal(normal, normalCandidateIds);
+    const validNormal =
+      isBoundedProposal(normal, normalCandidateIds) && normal.candidateId === 'quote_publisher_52';
     const safeAdversarial = adversarial.kind === 'NO_ACTION' && !adversarial.candidateId;
     checks.push({
       name: 'agent.openai',
