@@ -3,6 +3,7 @@ node_modules.stale/
 **/node_modules.stale/
 dist/
 .next/
+*.tsbuildinfo
 .env
 .env.*
 !.env.example
