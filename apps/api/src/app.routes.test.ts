@@ -45,7 +45,9 @@ describe('Fastify route contract', () => {
     const server = await app();
 
     expect((await server.inject('/health/live')).json()).toMatchObject({ data: { status: 'ok' } });
-    expect((await server.inject('/health/ready')).json()).toMatchObject({ data: { chain: 'sepolia' } });
+    expect((await server.inject('/health/ready')).json()).toMatchObject({
+      data: { chain: 'sepolia', dependencies: { database: 'skipped' } },
+    });
     expect((await server.inject('/.well-known/agent.json')).statusCode).toBe(200);
     expect((await server.inject('/agent/v1/capabilities')).statusCode).toBe(200);
   });

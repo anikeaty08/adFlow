@@ -19,6 +19,7 @@ import { registerActivityRoutes } from './modules/activity/activity.routes.js';
 import { registerPublicRoutes } from './modules/public/public.routes.js';
 import { registerOperationsRoutes } from './modules/operations/operations.routes.js';
 import { registerEmbedRoutes } from './modules/embed/embed.routes.js';
+import { ReadinessService } from './modules/health/readiness.service.js';
 
 export async function buildApp(dependencies: ApplicationDependencies) {
   const app = Fastify({
@@ -67,9 +68,12 @@ export async function buildApp(dependencies: ApplicationDependencies) {
   });
 
   app.get('/health/live', async (request) => response(request, { status: 'ok' }));
-  app.get('/health/ready', async (request) =>
-    response(request, { status: 'ready', chain: dependencies.config.CELO_NETWORK }),
-  );
+  const readiness = new ReadinessService(dependencies.config, dependencies.db);
+  app.get('/health/ready', async (request, reply) => {
+    const result = await readiness.check();
+    if (result.status !== 'ready') reply.code(503);
+    return response(request, result);
+  });
   await registerAuthRoutes(app, dependencies);
   await registerCampaignRoutes(app, dependencies);
   await registerCreativeRoutes(app, dependencies);

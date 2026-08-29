@@ -27,7 +27,7 @@ export const celoSepoliaUsdc = {
   feeCurrencyAddress: '0x4822e58de6f5e485eF90df51C41CE01721331dC0' as const,
 };
 
-export function createCeloPublicClient(rpcUrl = celoSepolia.rpcUrls.default.http[0]): PublicClient {
+export function createCeloPublicClient(rpcUrl: string = celoSepolia.rpcUrls.default.http[0]): PublicClient {
   return createPublicClient({ chain: celoSepolia, transport: http(rpcUrl) });
 }
 
