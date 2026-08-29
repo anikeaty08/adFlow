@@ -141,9 +141,6 @@ export class CampaignAgentService {
         this.emitActionReady(begun.run.id, campaignId, proposal),
       monitor: async (): Promise<MonitorResult> => 'NO_DATA',
       optimize: async () => ({ kind: 'NO_ACTION' }),
-      proposeSettlement: async () => {
-        await this.outbox.enqueue('settlement.proposal.requested', 'campaign', campaignId, { campaignId });
-      },
     });
 
     try {

@@ -13,7 +13,6 @@ function dependencies(overrides: Partial<CampaignGraphDependencies> = {}): Campa
     executeApprovedAction: async () => 'act_1',
     monitor: async () => 'BAD',
     optimize: async () => ({ kind: 'NO_ACTION' }),
-    proposeSettlement: async () => undefined,
     ...overrides,
   };
 }
@@ -31,29 +30,23 @@ describe('Durable Campaign Agent graph', () => {
     expect(executeApprovedAction).not.toHaveBeenCalled();
   });
 
-  it('runs typed execution only after policy approval, then proposes settlement', async () => {
+  it('runs typed execution only after policy approval, then completes a no-data cycle', async () => {
     const executeApprovedAction = vi.fn(async () => 'act_1');
-    const proposeSettlement = vi.fn(async () => undefined);
     const graph = createDurableCampaignGraph(
-      dependencies({ executeApprovedAction, proposeSettlement, monitor: async () => 'FRAUD' }),
+      dependencies({ executeApprovedAction, monitor: async () => 'NO_DATA' }),
     );
 
     const result = await graph.invoke({ campaignId: 'cmp_1', agentRunId: 'run_1' });
 
     expect(executeApprovedAction).toHaveBeenCalledOnce();
-    expect(proposeSettlement).toHaveBeenCalledOnce();
     expect(result.status).toBe('COMPLETED');
   });
 
   it('waits for signed publisher quotes instead of attempting settlement', async () => {
-    const proposeSettlement = vi.fn(async () => undefined);
-    const graph = createDurableCampaignGraph(
-      dependencies({ requestQuotes: async () => [], proposeSettlement }),
-    );
+    const graph = createDurableCampaignGraph(dependencies({ requestQuotes: async () => [] }));
 
     const result = await graph.invoke({ campaignId: 'cmp_1', agentRunId: 'run_1' });
 
     expect(result.status).toBe('WAITING_FOR_QUOTES');
-    expect(proposeSettlement).not.toHaveBeenCalled();
   });
 });

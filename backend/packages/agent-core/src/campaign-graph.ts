@@ -34,7 +34,6 @@ export type CampaignGraphDependencies = {
   executeApprovedAction(campaignId: string, proposal: CampaignProposal): Promise<string>;
   monitor(campaignId: string): Promise<MonitorResult>;
   optimize(campaignId: string, monitorResult: MonitorResult): Promise<CampaignProposal | null>;
-  proposeSettlement(campaignId: string): Promise<void>;
 };
 
 /**
@@ -81,10 +80,7 @@ export function createDurableCampaignGraph(dependencies: CampaignGraphDependenci
       const proposal = await dependencies.optimize(state.campaignId, state.monitorResult!);
       return { proposal: proposal ? proposalSchema.parse(proposal) : null };
     })
-    .addNode('propose_settlement', async (state) => {
-      await dependencies.proposeSettlement(state.campaignId);
-      return { status: 'COMPLETED' as const };
-    })
+    .addNode('complete_cycle', async () => ({ status: 'COMPLETED' as const }))
     .addEdge(START, 'load_campaign')
     .addEdge('load_campaign', 'observe_market')
     .addEdge('observe_market', 'discover_publishers')
@@ -96,15 +92,15 @@ export function createDurableCampaignGraph(dependencies: CampaignGraphDependenci
       if (state.policyDecision === 'WAITING_FOR_QUOTES') return 'await_quotes';
       if (state.policyDecision === 'ALLOW') return 'execute';
       if (state.policyDecision === 'REQUIRES_APPROVAL') return 'await_approval';
-      return 'propose_settlement';
+      return 'complete_cycle';
     })
     .addEdge('await_quotes', END)
     .addEdge('await_approval', END)
     .addEdge('execute', 'monitor')
     .addConditionalEdges('monitor', (state) =>
-      state.monitorResult === 'GOOD' ? 'optimize' : 'propose_settlement',
+      state.monitorResult === 'NO_DATA' ? 'complete_cycle' : 'optimize',
     )
     .addEdge('optimize', 'policy_gate')
-    .addEdge('propose_settlement', END)
+    .addEdge('complete_cycle', END)
     .compile();
 }
