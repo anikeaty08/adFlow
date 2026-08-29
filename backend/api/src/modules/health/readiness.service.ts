@@ -3,6 +3,7 @@ import { createCeloPublicClient } from '@adflow/chain';
 import { Redis } from 'ioredis';
 import type { Database } from '@adflow/db';
 import type { Config } from '../../config.js';
+import { hasDeployedBytecode } from './chain-deployment.js';
 
 type DependencyStatus = 'ok' | 'unavailable' | 'skipped';
 
@@ -18,12 +19,13 @@ export class ReadinessService {
   ) {}
 
   async check() {
-    const [database, celo, redis] = await Promise.all([
+    const [database, celo, redis, economicContracts] = await Promise.all([
       this.checkDatabase(),
       this.checkCelo(),
       this.checkRedis(),
+      this.checkEconomicContracts(),
     ]);
-    const dependencies = { database, celo, redis };
+    const dependencies = { database, celo, redis, economicContracts };
     const ready = Object.values(dependencies).every((status) => status !== 'unavailable');
 
     return {
@@ -47,6 +49,29 @@ export class ReadinessService {
     try {
       const chainId = await createCeloPublicClient(this.config.CELO_RPC_URL).getChainId();
       return chainId === this.config.CELO_CHAIN_ID ? 'ok' : 'unavailable';
+    } catch {
+      return 'unavailable';
+    }
+  }
+
+  /**
+   * A healthy RPC alone is insufficient for AdFlow. The API must not advertise readiness when
+   * its configured settlement currency or either financial contract is missing on that RPC.
+   * Test environments may intentionally omit deployment addresses and report this as skipped.
+   */
+  private async checkEconomicContracts(): Promise<DependencyStatus> {
+    if (!this.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS || !this.config.ADFLOW_SETTLEMENT_ADDRESS) {
+      return this.config.NODE_ENV === 'test' ? 'skipped' : 'unavailable';
+    }
+
+    try {
+      const client = createCeloPublicClient(this.config.CELO_RPC_URL);
+      const [vault, settlement, token] = await Promise.all([
+        client.getCode({ address: this.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS as `0x${string}` }),
+        client.getCode({ address: this.config.ADFLOW_SETTLEMENT_ADDRESS as `0x${string}` }),
+        client.getCode({ address: this.config.USDC_TOKEN_ADDRESS as `0x${string}` }),
+      ]);
+      return [vault, settlement, token].every(hasDeployedBytecode) ? 'ok' : 'unavailable';
     } catch {
       return 'unavailable';
     }

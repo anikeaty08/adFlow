@@ -2,6 +2,7 @@ import { createCeloPublicClient } from '@adflow/chain';
 import type { Database } from '@adflow/db';
 import type { Config } from '../config.js';
 import { ReadinessService } from '../modules/health/readiness.service.js';
+import { hasDeployedBytecode } from '../modules/health/chain-deployment.js';
 import type { SmokeCheck } from './types.js';
 
 export async function checkInfrastructure(config: Config, db: Database): Promise<SmokeCheck[]> {
@@ -26,20 +27,21 @@ export async function checkInfrastructure(config: Config, db: Database): Promise
     },
     {
       name: 'contracts.deployed',
-      status: vaultBytecode && settlementBytecode ? 'passed' : 'failed',
+      status:
+        hasDeployedBytecode(vaultBytecode) && hasDeployedBytecode(settlementBytecode) ? 'passed' : 'failed',
       details: {
         vaultConfigured: Boolean(config.ADFLOW_CAMPAIGN_VAULT_ADDRESS),
         settlementConfigured: Boolean(config.ADFLOW_SETTLEMENT_ADDRESS),
-        vaultHasBytecode: Boolean(vaultBytecode),
-        settlementHasBytecode: Boolean(settlementBytecode),
+        vaultHasBytecode: hasDeployedBytecode(vaultBytecode),
+        settlementHasBytecode: hasDeployedBytecode(settlementBytecode),
       },
     },
     {
       name: 'settlement-token.deployed',
-      status: tokenBytecode ? 'passed' : 'failed',
+      status: hasDeployedBytecode(tokenBytecode) ? 'passed' : 'failed',
       details: {
         address: config.USDC_TOKEN_ADDRESS,
-        hasBytecode: Boolean(tokenBytecode),
+        hasBytecode: hasDeployedBytecode(tokenBytecode),
         decimals: config.USDC_DECIMALS,
       },
     },
