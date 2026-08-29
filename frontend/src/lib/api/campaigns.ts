@@ -14,8 +14,26 @@ export type CampaignActivity = {
   payload: Record<string, unknown>;
 };
 
+export type CreateCampaignInput = {
+  name: string;
+  objectiveText: string;
+  landingUrl: string;
+  pricingModel: 'CPC' | 'CPM';
+  targeting: { categories: string[] };
+  blockedCategories: string[];
+  maxUnitPriceAtomic: string;
+  settlementToken: { symbol: string; address: string };
+  budgetPlannedAtomic: string;
+  startAt: string;
+  endAt: string;
+  strategy: { minReputationScore: number; explorationRatioBasisPoints: number };
+};
+
 export const listCampaigns = () => apiRequest<CampaignSummary[]>('/api/v1/campaigns');
 export const listCampaignActivity = (campaignId: string) =>
   apiRequest<CampaignActivity[]>(`/api/v1/campaigns/${campaignId}/activity`);
 export const prepareCampaignFunding = (campaignId: string) =>
   apiRequest(`/api/v1/campaigns/${campaignId}/prepare-funding`, { method: 'POST' });
+
+export const createCampaign = (input: CreateCampaignInput) =>
+  apiRequest<CampaignSummary>('/api/v1/campaigns', { body: JSON.stringify(input), method: 'POST' });
