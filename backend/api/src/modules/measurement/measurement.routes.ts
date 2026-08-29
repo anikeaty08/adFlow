@@ -31,6 +31,7 @@ export async function registerMeasurementRoutes(app: FastifyInstance, dependenci
         visibleRatio: input.viewability.visibleRatio,
         visibleMs: input.viewability.visibleMs,
         userAgent: request.headers['user-agent'] ?? '',
+        ipAddress: request.ip,
       });
       reply.status(recorded.duplicate ? 200 : 202);
       return response(request, { accepted: !recorded.duplicate, eventId: recorded.event.id });
@@ -46,6 +47,7 @@ export async function registerMeasurementRoutes(app: FastifyInstance, dependenci
         query.eventId,
         query.origin,
         request.headers['user-agent'] ?? '',
+        request.ip,
       );
       return reply.redirect(result.destination, 302);
     },

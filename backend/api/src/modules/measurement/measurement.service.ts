@@ -2,6 +2,10 @@ import { hash, verifyPlacementToken } from '@adflow/shared';
 import type { Config } from '../../config.js';
 import { MeasurementRepository } from './measurement.repository.js';
 import { DisplayVerificationPolicy, FraudHeuristicPolicy } from './verification.policy.js';
+import {
+  createMeasurementVelocityStore,
+  type MeasurementVelocityStore,
+} from './measurement-velocity.store.js';
 
 export class MeasurementService {
   private readonly policy = new DisplayVerificationPolicy();
@@ -9,6 +13,7 @@ export class MeasurementService {
   constructor(
     private readonly repository: MeasurementRepository,
     private readonly config: Config,
+    private readonly velocityStore: MeasurementVelocityStore = createMeasurementVelocityStore(config),
   ) {}
 
   async recordImpression(input: {
@@ -19,12 +24,17 @@ export class MeasurementService {
     visibleRatio: number;
     visibleMs: number;
     userAgent: string;
+    ipAddress: string;
   }) {
     const claims = verifyPlacementToken(input.placementToken, this.config.PLACEMENT_TOKEN_SECRET);
     const result = this.policy.validateImpression(claims, input);
+    const velocity = await this.velocityStore.record({
+      eventType: 'IMPRESSION',
+      placementToken: input.placementToken,
+      ipAddress: input.ipAddress,
+    });
     const fraud = this.fraud.evaluate({
-      eventsFromSessionInMinute: 0,
-      eventsFromIpInMinute: 0,
+      ...velocity,
       repeatClickCount: 0,
       userAgentEntropy: input.userAgent.length >= 12 ? 1 : 0,
       isKnownDatacenterNetwork: false,
@@ -49,13 +59,22 @@ export class MeasurementService {
     });
   }
 
-  async recordClick(placementToken: string, clickId: string, origin: string, userAgent: string) {
+  async recordClick(
+    placementToken: string,
+    clickId: string,
+    origin: string,
+    userAgent: string,
+    ipAddress: string,
+  ) {
     const claims = verifyPlacementToken(placementToken, this.config.PLACEMENT_TOKEN_SECRET);
     const result = this.policy.validateClick(claims, origin);
+    const velocity = await this.velocityStore.record({
+      eventType: 'CLICK',
+      placementToken,
+      ipAddress,
+    });
     const fraud = this.fraud.evaluate({
-      eventsFromSessionInMinute: 0,
-      eventsFromIpInMinute: 0,
-      repeatClickCount: 0,
+      ...velocity,
       userAgentEntropy: userAgent.length >= 12 ? 1 : 0,
       isKnownDatacenterNetwork: false,
       isAutomationDetected: /headless|phantomjs|selenium|puppeteer/i.test(userAgent),
