@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AdFlowLogo } from '@/components/brand/adflow-logo';
 import { NetworkBadge } from '@/components/brand/network-badge';
+import { ConnectWalletButton } from '@/components/wallet/connect-wallet-button';
 import styles from './app-shell.module.css';
 
 const navigation = [
@@ -52,9 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className={styles.wallet}>
-          Wallet
-          <br />
-          <strong>0x71...39A</strong>
+          <ConnectWalletButton />
         </div>
       </aside>
       <main className={styles.content}>{children}</main>
