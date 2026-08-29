@@ -51,12 +51,15 @@ export class CampaignAgentService {
           campaignId,
         });
       },
-      discoverPublishers: async () => [...new Set(campaignQuotes.map((quote) => quote.publisherAgentId))],
-      rankPublishers: async (_id, publisherIds) => publisherIds,
-      requestQuotes: async () => {
+      discoverPublishers: async () => {
         campaignQuotes = await this.loadOpenQuotes(campaignId);
-        return campaignQuotes.map((quote) => quote.id);
+        return [...new Set(campaignQuotes.map((quote) => quote.publisherAgentId))];
       },
+      rankPublishers: async (_id, publisherIds) => publisherIds,
+      requestQuotes: async (_id, publisherIds) =>
+        campaignQuotes
+          .filter((quote) => publisherIds.includes(quote.publisherAgentId))
+          .map((quote) => quote.id),
       evaluateQuotes: async (_id, quoteIds) => {
         if (!campaign) return null;
         const proposal = await this.model.propose({
@@ -82,9 +85,6 @@ export class CampaignAgentService {
 
     try {
       const state = await graph.invoke({ campaignId, agentRunId: begun.run.id });
-      await this.memory.add(`Campaign run ${begun.run.id} completed with status ${state.status}.`, {
-        campaignId,
-      });
       await this.runRepository.updateState(
         begun.run.id,
         this.databaseStatus(state.status),
