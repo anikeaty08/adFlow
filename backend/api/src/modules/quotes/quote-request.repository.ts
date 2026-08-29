@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { quoteRequests, type Database } from '@adflow/db';
+import { agents, publishers, quoteRequests, type Database } from '@adflow/db';
 import { id } from '@adflow/shared';
 
 /** Persists one request per campaign inventory slot, making agent wakeups idempotent. */
@@ -27,5 +27,15 @@ export class QuoteRequestRepository {
           eq(quoteRequests.status, 'PENDING'),
         ),
       );
+  }
+
+  listPendingForPublisherOwner(ownerUserId: string) {
+    return this.db
+      .select({ request: quoteRequests })
+      .from(quoteRequests)
+      .innerJoin(agents, eq(quoteRequests.publisherAgentId, agents.id))
+      .innerJoin(publishers, eq(agents.publisherId, publishers.id))
+      .where(and(eq(publishers.ownerUserId, ownerUserId), eq(quoteRequests.status, 'PENDING')))
+      .orderBy(quoteRequests.requestedAt);
   }
 }

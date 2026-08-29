@@ -44,6 +44,14 @@ export async function registerQuoteRoutes(app: FastifyInstance, dependencies: Ap
     if (!quote) throw new DomainError('NOT_FOUND', 'Quote was not found.');
     return response(request, quote);
   });
+  app.get('/api/v1/publishers/me/quote-requests', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const requests = await quoteRequests.listPendingForPublisherOwner(user.id);
+    return response(
+      request,
+      requests.map(({ request: quoteRequest }) => quoteRequest),
+    );
+  });
   app.post('/agent/v1/quotes', async (request) => {
     const body = z.object({ campaignRef: z.string().min(1), ...quoteSchema.shape }).parse(request.body);
     if (body.validUntil <= new Date())
