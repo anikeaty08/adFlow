@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { and, count, eq } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import { agents, agentRuns, agreements, measurementEvents } from '@adflow/db';
 import { DomainError } from '@adflow/shared';
 import type { ApplicationDependencies } from '../../types.js';
@@ -78,10 +78,31 @@ export async function registerOperationsRoutes(app: FastifyInstance, dependencie
     const campaignId = (request.params as { campaignId: string }).campaignId;
     if (!(await campaigns.findById(campaignId, user.id)))
       throw new DomainError('NOT_FOUND', 'Campaign was not found.');
+    const query = request.query as { metric?: string; interval?: string };
+    const metric = query.metric === 'impressions' ? 'impressions' : 'clicks';
+    const interval = query.interval === 'day' ? 'day' : 'hour';
+    const eventType = metric === 'impressions' ? 'IMPRESSION' : 'CLICK';
+    const bucket =
+      interval === 'day'
+        ? sql<Date>`date_trunc('day', ${measurementEvents.occurredAt})`
+        : sql<Date>`date_trunc('hour', ${measurementEvents.occurredAt})`;
+    const rows = await dependencies.db
+      .select({ bucket, value: count() })
+      .from(measurementEvents)
+      .innerJoin(agreements, eq(measurementEvents.agreementId, agreements.id))
+      .where(
+        and(
+          eq(agreements.campaignId, campaignId),
+          eq(measurementEvents.eventType, eventType),
+          eq(measurementEvents.status, 'ACCEPTED'),
+        ),
+      )
+      .groupBy(bucket)
+      .orderBy(bucket);
     return response(request, {
-      metric: (request.query as { metric?: string }).metric ?? 'clicks',
-      interval: (request.query as { interval?: string }).interval ?? 'hour',
-      points: [],
+      metric,
+      interval,
+      points: rows.map((row) => ({ at: row.bucket.toISOString(), value: Number(row.value) })),
     });
   });
 
