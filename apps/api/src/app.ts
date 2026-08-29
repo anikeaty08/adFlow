@@ -14,6 +14,7 @@ import { registerPublisherRoutes } from './modules/publishers/publisher.routes.j
 import { registerAgreementRoutes } from './modules/agreements/agreement.routes.js';
 import { registerAgentRoutes } from './modules/agents/agent.routes.js';
 import { registerQuoteRoutes } from './modules/quotes/quote.routes.js';
+import { registerActivityRoutes } from './modules/activity/activity.routes.js';
 
 export async function buildApp(dependencies: ApplicationDependencies) {
   const app = Fastify({
@@ -54,5 +55,6 @@ export async function buildApp(dependencies: ApplicationDependencies) {
   await registerAgreementRoutes(app, dependencies);
   await registerAgentRoutes(app, dependencies);
   await registerQuoteRoutes(app, dependencies);
+  await registerActivityRoutes(app, dependencies);
   return app;
 }
