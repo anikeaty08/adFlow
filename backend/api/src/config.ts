@@ -76,6 +76,27 @@ const schema = z
       ctx.addIssue({ code: 'custom', message: 'CELO_NETWORK=celo requires MAINNET_ENABLED=true' });
     if (v.CELO_NETWORK === 'celo' && !v.STRICT_POLICY_MODE)
       ctx.addIssue({ code: 'custom', message: 'Mainnet requires STRICT_POLICY_MODE=true' });
+    if (v.NODE_ENV !== 'production') return;
+
+    const required = [
+      ['OPENAI_API_KEY', v.OPENAI_API_KEY],
+      ['MEM0_API_KEY', v.MEM0_API_KEY],
+      ['ADFLOW_CAMPAIGN_VAULT_ADDRESS', v.ADFLOW_CAMPAIGN_VAULT_ADDRESS],
+      ['ADFLOW_SETTLEMENT_ADDRESS', v.ADFLOW_SETTLEMENT_ADDRESS],
+      ['SETTLEMENT_OPERATOR_PRIVATE_KEY', v.SETTLEMENT_OPERATOR_PRIVATE_KEY],
+      ['CLOUDINARY_CLOUD_NAME', v.CLOUDINARY_CLOUD_NAME],
+      ['CLOUDINARY_API_KEY', v.CLOUDINARY_API_KEY],
+      ['CLOUDINARY_API_SECRET', v.CLOUDINARY_API_SECRET],
+    ];
+    for (const [name, value] of required) {
+      if (!value) ctx.addIssue({ code: 'custom', message: `${name} is required in production` });
+    }
+    if (!v.REDIS_URL && !(v.UPSTASH_REDIS_REST_URL && v.UPSTASH_REDIS_REST_TOKEN))
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'REDIS_URL or both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required in production',
+      });
   });
 export type Config = z.infer<typeof schema>;
 export const loadConfig = (): Config => {
@@ -100,5 +121,10 @@ export const loadConfig = (): Config => {
     MEM0_BASE_URL: process.env.MEM0_BASE_URL,
   };
   const parsed = schema.parse(environment);
+  if (parsed.NODE_ENV === 'production') {
+    if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET is required in production');
+    if (!process.env.PLACEMENT_TOKEN_SECRET)
+      throw new Error('PLACEMENT_TOKEN_SECRET is required in production');
+  }
   return parsed;
 };
