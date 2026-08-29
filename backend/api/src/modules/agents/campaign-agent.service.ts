@@ -1,5 +1,13 @@
 import { and, eq } from 'drizzle-orm';
-import { campaigns, quotes, type Database } from '@adflow/db';
+import {
+  adSlots,
+  agents,
+  campaignPolicies,
+  campaigns,
+  publisherSites,
+  quotes,
+  type Database,
+} from '@adflow/db';
 import {
   createDurableCampaignGraph,
   type CampaignProposal,
@@ -12,8 +20,11 @@ import { OutboxRepository } from '../outbox/outbox.repository.js';
 import { AgentRunRepository } from './agent-run.repository.js';
 import type { CampaignModelGateway } from './openai-model.gateway.js';
 import type { AgentMemoryGateway } from './mem0.memory.gateway.js';
+import { evaluatePublisherEligibility } from '../operations/publisher-eligibility.js';
 
-type CampaignRecord = typeof campaigns.$inferSelect;
+type CampaignRecord = typeof campaigns.$inferSelect & {
+  policy: typeof campaignPolicies.$inferSelect;
+};
 type QuoteRecord = typeof quotes.$inferSelect;
 
 /**
@@ -52,7 +63,7 @@ export class CampaignAgentService {
         });
       },
       discoverPublishers: async () => {
-        campaignQuotes = await this.loadOpenQuotes(campaignId);
+        campaignQuotes = await this.loadEligibleOpenQuotes(campaign!);
         return [...new Set(campaignQuotes.map((quote) => quote.publisherAgentId))];
       },
       rankPublishers: async (_id, publisherIds) => publisherIds,
@@ -100,14 +111,43 @@ export class CampaignAgentService {
   private async loadCampaign(campaignId: string) {
     const [campaign] = await this.db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
     if (!campaign) throw new Error(`Campaign ${campaignId} was not found`);
-    return campaign;
+    const [policy] = await this.db
+      .select()
+      .from(campaignPolicies)
+      .where(eq(campaignPolicies.campaignId, campaignId))
+      .limit(1);
+    if (!policy) throw new Error(`Campaign ${campaignId} has no policy`);
+    return { ...campaign, policy };
   }
 
-  private loadOpenQuotes(campaignId: string) {
-    return this.db
-      .select()
+  private async loadEligibleOpenQuotes(campaign: CampaignRecord) {
+    const candidates = await this.db
+      .select({ quote: quotes, slot: adSlots, site: publisherSites })
       .from(quotes)
-      .where(and(eq(quotes.campaignId, campaignId), eq(quotes.status, 'OPEN')));
+      .innerJoin(agents, eq(agents.id, quotes.publisherAgentId))
+      .innerJoin(publisherSites, eq(publisherSites.publisherId, agents.publisherId))
+      .innerJoin(adSlots, and(eq(adSlots.id, quotes.slotId), eq(adSlots.siteId, publisherSites.id)))
+      .where(and(eq(quotes.campaignId, campaign.id), eq(quotes.status, 'OPEN')));
+
+    return candidates
+      .filter(
+        ({ quote, slot, site }) =>
+          evaluatePublisherEligibility(
+            {
+              allowedCategories: campaign.policy.allowedCategories,
+              blockedCategories: campaign.policy.blockedCategories,
+              maxUnitPriceAtomic: campaign.maxUnitPriceAtomic,
+              minReputationScore: campaign.policy.minReputationScore,
+            },
+            {
+              categories: slot.categories,
+              floorRateAtomic: quote.rateAtomic,
+              siteStatus: site.status,
+              slotStatus: slot.status,
+            },
+          ).eligible,
+      )
+      .map(({ quote }) => quote);
   }
 
   private evaluatePolicy(
