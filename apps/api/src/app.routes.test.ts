@@ -6,6 +6,7 @@ import type { Config } from './config.js';
 const config: Config = {
   NODE_ENV: 'test',
   PORT: 3001,
+  CORS_ORIGINS: 'http://localhost:3000',
   DATABASE_URL: 'postgres://test',
   SESSION_SECRET: 'test-session-secret-with-at-least-thirty-two-characters',
   PLACEMENT_TOKEN_SECRET: 'test-placement-secret-with-at-least-thirty-two-characters',

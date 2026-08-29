@@ -8,6 +8,7 @@ const schema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().default(3001),
+    CORS_ORIGINS: z.string().default('http://localhost:3000'),
     DATABASE_URL: z.string().min(1),
     SESSION_SECRET: z.string().min(32),
     PLACEMENT_TOKEN_SECRET: z.string().min(32),
@@ -51,6 +52,7 @@ const schema = z
     OPENAI_API_KEY: z.string().min(1).optional(),
     OPENAI_MODEL: z.literal('gpt-4o-mini').default('gpt-4o-mini'),
     MEM0_API_KEY: z.string().min(1).optional(),
+    MEMO_API_KEY: z.string().min(1).optional(),
     MEM0_BASE_URL: z.url().default('https://api.mem0.ai'),
     X402_FACILITATOR_URL: z.url().optional(),
     MAINNET_ENABLED: z
@@ -92,7 +94,8 @@ export const loadConfig = (): Config => {
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     CELO_NETWORK: normalizedNetwork,
     SETTLEMENT_OPERATOR_PRIVATE_KEY: normalizedOperatorKey,
-    MEM0_API_KEY: process.env.MEM0_API_KEY,
+    MEM0_API_KEY: process.env.MEM0_API_KEY ?? process.env.MEMO_API_KEY,
+    MEMO_API_KEY: process.env.MEMO_API_KEY,
     MEM0_BASE_URL: process.env.MEM0_BASE_URL,
   };
   const parsed = schema.parse(environment);

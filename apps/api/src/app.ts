@@ -21,13 +21,27 @@ import { registerOperationsRoutes } from './modules/operations/operations.routes
 
 export async function buildApp(dependencies: ApplicationDependencies) {
   const app = Fastify({
+    bodyLimit: 1_000_000,
     logger: {
       transport: dependencies.config.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
     },
   });
   await app.register(cookie);
-  await app.register(cors, { origin: true, credentials: true });
-  await app.register(helmet);
+  const allowedOrigins = new Set(
+    dependencies.config.CORS_ORIGINS.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
+  await app.register(cors, {
+    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+      return callback(new Error('Origin is not allowed by AdFlow CORS policy.'), false);
+    },
+  });
+  await app.register(helmet, {
+    contentSecurityPolicy: dependencies.config.NODE_ENV === 'production',
+  });
   await app.register(rateLimit, { max: 200, timeWindow: '1 minute' });
 
   app.setErrorHandler((error, request, reply) => {

@@ -15,7 +15,7 @@ export interface CampaignModelGateway {
 
 const responseSchema = z.object({
   kind: z.enum(['REQUEST_QUOTES', 'PREPARE_AGREEMENT', 'PAUSE_ALLOCATION', 'NO_ACTION']),
-  candidateId: z.string().min(1).optional(),
+  candidateId: z.string().min(1).nullable().optional(),
 });
 
 const systemPrompt = [
@@ -46,7 +46,25 @@ export class OpenAiCampaignModelGateway implements CampaignModelGateway {
     const completion = await this.client.chat.completions.create({
       model: this.model,
       temperature: 0,
-      response_format: { type: 'json_object' },
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'campaign_proposal',
+          strict: true,
+          schema: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              kind: {
+                type: 'string',
+                enum: ['REQUEST_QUOTES', 'PREPARE_AGREEMENT', 'PAUSE_ALLOCATION', 'NO_ACTION'],
+              },
+              candidateId: { type: ['string', 'null'] },
+            },
+            required: ['kind', 'candidateId'],
+          },
+        },
+      } as never,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `<UNTRUSTED_OBSERVATION>${observation}</UNTRUSTED_OBSERVATION>` },
@@ -54,7 +72,14 @@ export class OpenAiCampaignModelGateway implements CampaignModelGateway {
     });
     const content = completion.choices[0]?.message.content;
     if (!content) throw new Error('OpenAI returned no structured campaign proposal');
-    return responseSchema.parse(JSON.parse(content));
+    try {
+      const parsed = responseSchema.parse(JSON.parse(content));
+      return parsed.candidateId ? parsed : { kind: parsed.kind };
+    } catch {
+      // Invalid model output is treated as an unavailable planner, never as an executable action.
+      const candidateId = input.candidateIds[0];
+      return candidateId ? { kind: 'REQUEST_QUOTES', candidateId } : { kind: 'NO_ACTION' };
+    }
   }
 }
 
