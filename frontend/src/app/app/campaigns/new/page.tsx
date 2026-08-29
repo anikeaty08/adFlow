@@ -1,4 +1,5 @@
 import { IconArrowRight, IconShieldCheck } from '@tabler/icons-react';
+import { CreativeUpload } from '@/components/campaign/creative-upload';
 import { StudioScreen } from '@/components/studio/studio-screen';
 
 export default function NewCampaignPage() {
@@ -49,6 +50,7 @@ export default function NewCampaignPage() {
             individual allocations at 2 USDC.
           </span>
         </div>
+        <CreativeUpload />
         <button className="buttonPrimary" type="button">
           Review agent policy <IconArrowRight size={17} />
         </button>
