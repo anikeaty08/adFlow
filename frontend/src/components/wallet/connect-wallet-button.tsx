@@ -1,17 +1,34 @@
 'use client';
 
 import { IconWallet } from '@tabler/icons-react';
+import { useState } from 'react';
 import { celoSepolia } from 'viem/chains';
-import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
+import { useAccount, useConnect, useSignMessage, useSwitchChain } from 'wagmi';
+import { createAuthChallenge, verifyWalletSession } from '@/lib/api/auth';
 
 const truncateAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;
 
 export function ConnectWalletButton() {
   const account = useAccount();
   const { connect, connectors, isPending } = useConnect();
-  const { disconnect } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
   const { switchChain } = useSwitchChain();
-  if (account.isConnected && account.chainId !== celoSepolia.id)
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const connector = connectors[0];
+
+  async function authenticate() {
+    if (!account.address || !account.chainId) return;
+    setIsAuthenticating(true);
+    try {
+      const challenge = await createAuthChallenge(account.address, account.chainId);
+      const signature = await signMessageAsync({ message: challenge.message });
+      await verifyWalletSession(challenge.message, signature);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  }
+
+  if (account.isConnected && account.chainId !== celoSepolia.id) {
     return (
       <button
         className="buttonSecondary"
@@ -21,14 +38,17 @@ export function ConnectWalletButton() {
         Switch to Celo Sepolia
       </button>
     );
-  if (account.isConnected && account.address)
+  }
+
+  if (account.isConnected && account.address) {
     return (
-      <button className="buttonSecondary" onClick={() => disconnect()} type="button">
+      <button className="buttonSecondary" disabled={isAuthenticating} onClick={authenticate} type="button">
         <IconWallet size={16} />
-        {truncateAddress(account.address)}
+        {isAuthenticating ? 'Sign in wallet' : truncateAddress(account.address)}
       </button>
     );
-  const connector = connectors[0];
+  }
+
   return (
     <button
       className="buttonPrimary"
