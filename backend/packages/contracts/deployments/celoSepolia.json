@@ -1,0 +1,17 @@
+{
+  "chainId": 11142220,
+  "network": "celoSepolia",
+  "contracts": {
+    "campaignVault": "0xea23F3cDde445305C294Be070BFfbb7475d93C50",
+    "settlement": "0xb245E1d7377Ffc1306Ca0e56c82DBDB7081b0796",
+    "testSettlementToken": "0x279b12c0A78E80560Ce3F2B119C2fDAC0bfc57B6"
+  },
+  "settlementOperator": "0x00aA88bD731590002d202Fa4078Be402544F7C10",
+  "deployedBy": "0x00aA88bD731590002d202Fa4078Be402544F7C10",
+  "testSettlementToken": {
+    "symbol": "adUSDC",
+    "decimals": 6,
+    "initialSupplyAtomic": "10000000000000",
+    "deployedBy": "0x00aA88bD731590002d202Fa4078Be402544F7C10"
+  }
+}

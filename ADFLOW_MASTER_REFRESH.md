@@ -543,7 +543,9 @@ CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 
-GROQ_API_KEY=
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4.1
+MEM0_API_KEY=
 ```
 
 ### Recommended
@@ -581,7 +583,6 @@ USER_CHAIN_WRITE_MODE=frontend_wallet
 
 ### Not required as core dependencies
 
-- OpenAI key;
 - Anthropic key;
 - Alchemy/Infura/QuickNode initially;
 - MongoDB;

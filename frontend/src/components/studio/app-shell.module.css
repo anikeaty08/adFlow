@@ -1,0 +1,93 @@
+.shell {
+  display: grid;
+  grid-template-columns: 235px minmax(0, 1fr);
+  min-height: 100dvh;
+}
+.sidebar {
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 1.4rem;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+}
+.network {
+  border-bottom: 1px solid var(--line);
+  margin: 1.35rem 0 1rem;
+  padding-bottom: 1rem;
+}
+.sidebar nav {
+  display: grid;
+  gap: 0.22rem;
+}
+.sidebar nav a {
+  align-items: center;
+  border-radius: 8px;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.87rem;
+  gap: 0.7rem;
+  padding: 0.73rem;
+}
+.sidebar nav a:hover,
+.sidebar nav .active {
+  background: var(--surface);
+  color: var(--ink);
+}
+.sidebar nav .active {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.wallet {
+  border-top: 1px solid var(--line);
+  color: var(--quiet);
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  line-height: 1.65;
+  margin-top: auto;
+  padding-top: 1rem;
+}
+.wallet strong {
+  color: var(--muted);
+  font-weight: 400;
+}
+.content {
+  min-width: 0;
+  padding: clamp(1.5rem, 4vw, 4rem);
+}
+@media (max-width: 760px) {
+  .shell {
+    display: block;
+  }
+  .sidebar {
+    background: var(--canvas);
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    height: auto;
+    padding: 0.85rem 1rem;
+    position: sticky;
+    z-index: 5;
+  }
+  .network,
+  .wallet {
+    display: none;
+  }
+  .sidebar nav {
+    display: flex;
+    gap: 0.15rem;
+    justify-content: end;
+    overflow: auto;
+  }
+  .sidebar nav a {
+    font-size: 0;
+    padding: 0.5rem;
+  }
+  .sidebar nav a svg {
+    height: 19px;
+    width: 19px;
+  }
+  .content {
+    padding: 1.5rem;
+  }
+}
