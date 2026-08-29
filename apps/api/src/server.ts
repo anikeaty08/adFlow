@@ -8,7 +8,7 @@ const config = loadConfig();
 const database = createDatabase(config.DATABASE_URL);
 const app = await buildApp({ config, db: database.db });
 const campaignWorker = startCampaignWorker(config, database.db);
-const settlementWorker = startSettlementWorker(config);
+const settlementWorker = startSettlementWorker(config, database.db);
 await app.listen({ host: '0.0.0.0', port: config.PORT });
 
 const shutdown = async () => {
