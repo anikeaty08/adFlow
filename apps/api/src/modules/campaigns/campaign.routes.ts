@@ -1,0 +1,70 @@
+import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import { campaignInput, safeUrl } from '@adflow/shared';
+import type { ApplicationDependencies } from '../../types.js';
+import { requireUser } from '../../shared/auth.js';
+import { response } from '../../shared/http.js';
+import { CampaignRepository } from './campaign.repository.js';
+import { CampaignService } from './campaign.service.js';
+
+export async function registerCampaignRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
+  const service = new CampaignService(new CampaignRepository(dependencies.db));
+  app.post('/api/v1/campaigns', async (request) => {
+    const owner = await requireUser(request, dependencies.db);
+    const input = campaignInput.parse(request.body);
+    return response(
+      request,
+      await service.create(owner, {
+        ...input,
+        startAt: input.startAt,
+        endAt: input.endAt,
+        settlementToken: input.settlementToken,
+        blockedCategories: input.blockedCategories,
+        minReputationScore: input.strategy.minReputationScore,
+        maxPublisherAllocationAtomic: input.strategy.maxPublisherAllocationAtomic,
+        explorationRatioBasisPoints: input.strategy.explorationRatioBasisPoints,
+      }),
+    );
+  });
+  app.get('/api/v1/campaigns', async (request) => {
+    const owner = await requireUser(request, dependencies.db);
+    return response(request, await new CampaignRepository(dependencies.db).listByOwner(owner.id));
+  });
+  app.get('/api/v1/campaigns/:campaignId', async (request) => {
+    const owner = await requireUser(request, dependencies.db);
+    return response(request, await service.get((request.params as { campaignId: string }).campaignId, owner));
+  });
+  app.patch('/api/v1/campaigns/:campaignId', async (request) => {
+    const owner = await requireUser(request, dependencies.db);
+    const update = z
+      .object({
+        name: z.string().min(2).max(120).optional(),
+        objectiveText: z.string().min(2).max(4000).optional(),
+        landingUrl: safeUrl.optional(),
+      })
+      .parse(request.body);
+    return response(
+      request,
+      await service.updateDraft((request.params as { campaignId: string }).campaignId, owner, update),
+    );
+  });
+  app.post('/api/v1/campaigns/:campaignId/prepare-funding', async (request) => {
+    const owner = await requireUser(request, dependencies.db);
+    const campaign = await service.get((request.params as { campaignId: string }).campaignId, owner);
+    return response(request, {
+      chainId: campaign.chainId,
+      token: campaign.settlementTokenAddress,
+      approval: {
+        required: true,
+        spender: process.env.CAMPAIGN_VAULT_ADDRESS ?? null,
+        amount: campaign.budgetPlannedAtomic,
+      },
+      contractCall: {
+        address: process.env.CAMPAIGN_VAULT_ADDRESS ?? null,
+        functionName: 'createCampaign',
+        args: [campaign.id, campaign.budgetPlannedAtomic],
+      },
+      state: 'prepared',
+    });
+  });
+}

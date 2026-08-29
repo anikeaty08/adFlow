@@ -1,0 +1,81 @@
+import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import { verifyMessage } from 'viem';
+import { address, atomic, canonicalJson, DomainError, pricingModel } from '@adflow/shared';
+import type { ApplicationDependencies } from '../../types.js';
+import { requireUser } from '../../shared/auth.js';
+import { response } from '../../shared/http.js';
+import { QuoteRepository } from './quote.repository.js';
+
+const quoteSchema = z.object({
+  publisherAgentId: z.string().min(1),
+  slotId: z.string().min(1),
+  pricingModel,
+  rateAtomic: atomic,
+  unitScale: z.number().int().positive(),
+  maxAllocationAtomic: atomic,
+  publisherWallet: address,
+  quoteNonce: z.string().min(8).max(200),
+  validUntil: z.coerce.date(),
+  signature: z.string().regex(/^0x[0-9a-fA-F]+$/),
+});
+
+export async function registerQuoteRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
+  const repository = new QuoteRepository(dependencies.db);
+  app.get('/api/v1/campaigns/:campaignId/quotes', async (request) => {
+    await requireUser(request, dependencies.db);
+    return response(
+      request,
+      await repository.listForCampaign((request.params as { campaignId: string }).campaignId),
+    );
+  });
+  app.get('/api/v1/quotes/:quoteId', async (request) => {
+    const user = await requireUser(request, dependencies.db);
+    const campaignId = z
+      .string()
+      .parse(request.query && (request.query as { campaignId?: string }).campaignId);
+    const quote = await repository.find((request.params as { quoteId: string }).quoteId, campaignId);
+    if (!quote) throw new DomainError('NOT_FOUND', 'Quote was not found.');
+    return response(request, quote);
+  });
+  app.post('/agent/v1/quotes', async (request) => {
+    const body = z.object({ campaignRef: z.string().min(1), ...quoteSchema.shape }).parse(request.body);
+    if (body.validUntil <= new Date())
+      throw new DomainError('INVALID_QUOTE', 'Quote expiry must be in the future.');
+    const signedPayload = canonicalJson({
+      campaignRef: body.campaignRef,
+      publisherAgentId: body.publisherAgentId,
+      slotId: body.slotId,
+      pricingModel: body.pricingModel,
+      rateAtomic: body.rateAtomic,
+      unitScale: body.unitScale,
+      maxAllocationAtomic: body.maxAllocationAtomic,
+      publisherWallet: body.publisherWallet,
+      quoteNonce: body.quoteNonce,
+      validUntil: body.validUntil.toISOString(),
+    });
+    const signatureValid = await verifyMessage({
+      address: body.publisherWallet as `0x${string}`,
+      message: signedPayload,
+      signature: body.signature as `0x${string}`,
+    });
+    if (!signatureValid)
+      throw new DomainError('INVALID_QUOTE_SIGNATURE', 'Publisher quote signature is invalid.');
+    return response(
+      request,
+      await repository.create({
+        campaignId: body.campaignRef,
+        publisherAgentId: body.publisherAgentId,
+        slotId: body.slotId,
+        pricingModel: body.pricingModel,
+        rateAtomic: body.rateAtomic,
+        unitScale: body.unitScale,
+        maxAllocationAtomic: body.maxAllocationAtomic,
+        publisherWallet: body.publisherWallet,
+        quoteNonce: body.quoteNonce,
+        validUntil: body.validUntil,
+        signature: body.signature,
+      }),
+    );
+  });
+}

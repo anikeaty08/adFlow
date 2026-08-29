@@ -1,0 +1,19 @@
+{
+  "name": "@adflow/agent-core",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@langchain/langgraph": "^1.2.1",
+    "@adflow/shared": "workspace:*",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.4"
+  }
+}

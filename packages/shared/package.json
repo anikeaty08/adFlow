@@ -1,0 +1,15 @@
+{
+  "name": "@adflow/shared",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.1.12",
+    "ulidx": "^2.4.1"
+  }
+}
