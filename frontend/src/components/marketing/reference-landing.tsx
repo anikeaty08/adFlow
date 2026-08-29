@@ -382,15 +382,33 @@ export function ReferenceLanding() {
         </section>
       </main>
       <footer className={styles.footer}>
-        <Link className={styles.brand} href="/">
-          <Image alt="AdFlow" height={27} src="/brand/adflow-symbol.svg" width={27} />
-          <span>AdFlow</span>
-        </Link>
-        <p>Autonomous media with an accountable trail.</p>
-        <div>
-          <Link href="/docs">Docs</Link>
-          <Link href="/app/network">Network</Link>
-          <Link href="/app">Studio</Link>
+        <div className={styles.footerTop}>
+          <div className={styles.footerBrandBlock}>
+            <Link className={styles.brand} href="/">
+              <Image alt="AdFlow" height={27} src="/brand/adflow-symbol.svg" width={27} />
+              <span>AdFlow</span>
+            </Link>
+            <p>Autonomous media with an accountable trail.</p>
+          </div>
+          <div className={styles.footerLinks}>
+            <div>
+              <span>Product</span>
+              <Link href="/app">Studio</Link>
+              <Link href="/app/network">Network</Link>
+              <Link href="/app/campaigns/new">Launch campaign</Link>
+            </div>
+            <div>
+              <span>Protocol</span>
+              <Link href="/docs">Documentation</Link>
+              <Link href="/docs#security">Security</Link>
+              <Link href="/docs#integrations">Integrations</Link>
+            </div>
+          </div>
+        </div>
+        <div className={styles.footerBottom}>
+          <span>© {new Date().getFullYear()} AdFlow Network</span>
+          <span>Celo Sepolia · Chain ID 11142220</span>
+          <span>Wallet-signed actions only</span>
         </div>
       </footer>
     </div>

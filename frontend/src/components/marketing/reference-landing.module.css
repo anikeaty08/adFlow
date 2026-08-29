@@ -494,25 +494,50 @@
   margin-top: 0;
 }
 .footer {
-  align-items: center;
   border-top: 1px solid rgba(241, 245, 239, 0.12);
-  display: grid;
-  gap: 2rem;
-  grid-template-columns: 1fr 1fr 1fr;
   margin: 0 auto;
   max-width: 1440px;
-  padding: 1.5rem 3.5rem 2rem;
+  padding: 3.5rem 3.5rem 2rem;
 }
-.footer p {
+.footerTop {
+  display: flex;
+  gap: 4rem;
+  justify-content: space-between;
+}
+.footerBrandBlock p {
   color: rgba(241, 245, 239, 0.45);
   font-size: 0.75rem;
-  margin: 0;
-  text-align: center;
+  margin: 1rem 0 0;
 }
-.footer > div {
+.footerLinks {
   display: flex;
-  gap: 1.2rem;
-  justify-content: end;
+  gap: 5rem;
+}
+.footerLinks div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-width: 130px;
+}
+.footerLinks span {
+  color: #9bef73;
+  font-family: 'Courier New', monospace;
+  font-size: 0.63rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+}
+.footerBottom {
+  border-top: 1px solid rgba(241, 245, 239, 0.1);
+  color: rgba(241, 245, 239, 0.38);
+  display: flex;
+  font-family: 'Courier New', monospace;
+  font-size: 0.62rem;
+  justify-content: space-between;
+  letter-spacing: 0.06em;
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  text-transform: uppercase;
 }
 .mobileMenu {
   align-items: center;
@@ -603,15 +628,20 @@
     justify-content: start;
   }
   .footer {
-    grid-template-columns: 1fr;
     padding-left: 1.25rem;
     padding-right: 1.25rem;
   }
-  .footer p {
-    text-align: left;
+  .footerTop {
+    flex-direction: column;
+    gap: 2.5rem;
   }
-  .footer > div {
-    justify-content: start;
+  .footerLinks {
+    gap: 2rem;
+  }
+  .footerBottom {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.65rem;
   }
 }
 @media (max-width: 520px) {
