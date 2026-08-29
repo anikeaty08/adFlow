@@ -2,6 +2,8 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { canonicalJson } from '@adflow/shared';
+import { useAccount, useSignMessage } from 'wagmi';
 import { apiRequest } from '@/lib/api/client';
 
 type QuoteRequest = {
@@ -14,8 +16,23 @@ type QuoteRequest = {
   fulfilledAt: string | null;
 };
 
+type Evaluation = {
+  campaignId: string;
+  decision: { decision: 'ACCEPT' | 'COUNTER' | 'REJECT'; counterRateAtomic?: string; reasonCodes: string[] };
+  quoteContext: {
+    publisherAgentId: string;
+    slotId: string;
+    pricingModel: string;
+    maxAllocationAtomic: string;
+    publisherWallet: string | null;
+    validUntil: string;
+  };
+};
+
 export function PublisherQuoteRequests() {
   const queryClient = useQueryClient();
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const [rates, setRates] = useState<Record<string, string>>({});
   const [status, setStatus] = useState('');
   const query = useQuery({
@@ -36,11 +53,43 @@ export function PublisherQuoteRequests() {
     try {
       const rate = Number(rates[requestId] ?? '0.02');
       if (!Number.isFinite(rate) || rate <= 0) throw new Error('Enter a positive USDC rate.');
-      await apiRequest(`/api/v1/publishers/me/quote-requests/${requestId}/evaluate`, {
-        body: JSON.stringify({ proposedRateAtomic: String(Math.round(rate * 1_000_000)) }),
-        method: 'POST',
-      });
-      setStatus('Decision evaluated against publisher policy.');
+      const evaluation = await apiRequest<Evaluation>(
+        `/api/v1/publishers/me/quote-requests/${requestId}/evaluate`,
+        {
+          body: JSON.stringify({ proposedRateAtomic: String(Math.round(rate * 1_000_000)) }),
+          method: 'POST',
+        },
+      );
+      if (evaluation.decision.decision === 'ACCEPT') {
+        if (
+          !address ||
+          !evaluation.quoteContext.publisherWallet ||
+          address.toLowerCase() !== evaluation.quoteContext.publisherWallet.toLowerCase()
+        )
+          throw new Error('Connect the payout wallet associated with this publisher agent.');
+        const quote = {
+          campaignRef: evaluation.campaignId,
+          publisherAgentId: evaluation.quoteContext.publisherAgentId,
+          slotId: evaluation.quoteContext.slotId,
+          pricingModel: evaluation.quoteContext.pricingModel,
+          rateAtomic: String(Math.round(rate * 1_000_000)),
+          unitScale: 1,
+          maxAllocationAtomic: evaluation.quoteContext.maxAllocationAtomic,
+          publisherWallet: evaluation.quoteContext.publisherWallet,
+          quoteNonce: crypto.randomUUID(),
+          validUntil: evaluation.quoteContext.validUntil,
+        };
+        const signature = await signMessageAsync({ message: canonicalJson(quote) });
+        await apiRequest('/agent/v1/quotes', {
+          body: JSON.stringify({ ...quote, signature }),
+          method: 'POST',
+        });
+        setStatus('Offer accepted and signed quote submitted.');
+      } else {
+        setStatus(
+          `${evaluation.decision.decision}: ${evaluation.decision.reasonCodes.join(', ') || 'policy evaluated'}`,
+        );
+      }
       await queryClient.invalidateQueries({ queryKey: ['publisher-quote-requests'] });
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Decision could not be evaluated.');
