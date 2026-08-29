@@ -1,6 +1,8 @@
 import { ActivityFeed, MetricRow, StudioScreen } from '@/components/studio/studio-screen';
+import { FundCampaignButton } from '@/components/wallet/fund-campaign-button';
 
-export default function CampaignDetailPage() {
+export default async function CampaignDetailPage({ params }: { params: Promise<{ campaignId: string }> }) {
+  const { campaignId } = await params;
   return (
     <StudioScreen
       action={{ href: '/app/campaigns/demo/agent', label: 'Agent decisions' }}
@@ -17,6 +19,9 @@ export default function CampaignDetailPage() {
         ]}
       />
       <ActivityFeed />
+      <div style={{ marginTop: '2rem', maxWidth: 260 }}>
+        <FundCampaignButton campaignId={campaignId} />
+      </div>
     </StudioScreen>
   );
 }
