@@ -25,8 +25,8 @@ const schema = z
       .optional(),
     CHAIN_WRITE_MODE: z.literal('frontend_wallet').default('frontend_wallet'),
     REDIS_URL: z.url().optional(),
-    GROQ_API_KEY: z.string().min(1).optional(),
-    GROQ_MODEL: z.string().min(1).default('llama-3.3-70b-versatile'),
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    OPENAI_MODEL: z.literal('gpt-4o-mini').default('gpt-4o-mini'),
     X402_FACILITATOR_URL: z.url().optional(),
     MAINNET_ENABLED: z
       .enum(['true', 'false'])

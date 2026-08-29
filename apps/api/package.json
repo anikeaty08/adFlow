@@ -21,8 +21,8 @@
     "cloudinary": "^2.7.0",
     "drizzle-orm": "^0.44.7",
     "fastify": "^5.5.0",
-    "groq-sdk": "^1.6.0",
     "ioredis": "^6.0.0",
+    "openai": "^7.8.0",
     "pino-pretty": "^13.1.1",
     "viem": "^2.38.5",
     "zod": "^4.1.12"
