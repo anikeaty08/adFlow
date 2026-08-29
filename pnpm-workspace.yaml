@@ -1,6 +1,7 @@
 packages:
   - backend/*
   - backend/packages/*
+  - frontend
 
 allowBuilds:
   esbuild: true

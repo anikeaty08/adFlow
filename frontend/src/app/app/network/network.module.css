@@ -1,0 +1,85 @@
+.page {
+  height: calc(100dvh - 4rem);
+  min-height: 620px;
+  position: relative;
+}
+.page header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 2;
+}
+.page h1 {
+  font-size: clamp(2rem, 3vw, 3.2rem);
+  letter-spacing: -0.06em;
+  margin: 0.7rem 0 0;
+}
+.page header :global(.buttonSecondary) {
+  min-height: 38px;
+}
+.canvas {
+  bottom: 0;
+  left: -4rem;
+  position: absolute;
+  right: -4rem;
+  top: 0;
+}
+.legend,
+.drawer {
+  background: rgba(24, 29, 26, 0.9);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  bottom: 1rem;
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  position: absolute;
+  z-index: 2;
+  backdrop-filter: blur(14px);
+}
+.legend {
+  color: var(--muted);
+  font-size: 0.77rem;
+  left: 0;
+}
+.legend strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+.drawer {
+  bottom: 1rem;
+  right: 0;
+  width: min(290px, calc(100vw - 3rem));
+}
+.drawer button {
+  align-self: end;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  padding: 0;
+}
+.drawer h2 {
+  letter-spacing: -0.05em;
+  margin: 0;
+}
+.drawer p:not(:global(.eyebrow)) {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .page {
+    height: calc(100dvh - 5rem);
+  }
+  .canvas {
+    left: -1.5rem;
+    right: -1.5rem;
+  }
+  .legend {
+    display: none;
+  }
+}

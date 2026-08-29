@@ -9,6 +9,7 @@
     "format:check": "prettier --check \"backend/api/src/**/*.ts\" \"backend/packages/*/src/**/*.ts\" \"*.json\"",
     "typecheck": "pnpm exec tsc -p backend/packages/shared/tsconfig.json --noEmit && pnpm exec tsc -p backend/packages/db/tsconfig.json --noEmit && pnpm exec tsc -p backend/packages/chain/tsconfig.json --noEmit && pnpm exec tsc -p backend/packages/agent-core/tsconfig.json --noEmit && pnpm exec tsc -p backend/api/tsconfig.json --noEmit",
     "dev": "pnpm --filter @adflow/api dev",
+    "dev:frontend": "pnpm --filter @adflow/frontend dev",
     "db:migrate": "pnpm --filter @adflow/db migrate",
     "contracts:compile": "pnpm --filter @adflow/contracts compile",
     "contracts:test": "pnpm --filter @adflow/contracts test",

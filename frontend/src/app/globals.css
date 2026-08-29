@@ -1,0 +1,146 @@
+:root {
+  --canvas: #111513;
+  --surface: #181d1a;
+  --surface-raised: #202722;
+  --line: rgba(236, 241, 235, 0.12);
+  --line-strong: rgba(236, 241, 235, 0.2);
+  --ink: #f1f5ef;
+  --muted: #aeb8b0;
+  --quiet: #718076;
+  --accent: #9bef73;
+  --accent-ink: #142112;
+  --danger: #e58375;
+  --warning: #e2c77a;
+  --radius: 18px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+input,
+textarea {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  color: var(--ink);
+  display: block;
+  margin-top: 0.45rem;
+  padding: 0.78rem 0.85rem;
+  resize: vertical;
+  width: 100%;
+}
+label {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pageShell {
+  min-height: 100dvh;
+}
+
+.buttonPrimary,
+.buttonSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.buttonPrimary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.buttonSecondary {
+  border-color: var(--line-strong);
+  color: var(--ink);
+  background: transparent;
+}
+.buttonPrimary:hover,
+.buttonSecondary:hover {
+  transform: translateY(-2px);
+}
+.buttonPrimary:active,
+.buttonSecondary:active {
+  transform: translateY(0) scale(0.98);
+}
+.buttonPrimary:focus-visible,
+.buttonSecondary:focus-visible,
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
