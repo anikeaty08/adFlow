@@ -14,7 +14,7 @@ describe('AdFlowSettlement', () => {
     await vault.connect(owner).setSettlementContract(await settlement.getAddress());
     await token.mint(advertiser.address, 1_000_000n);
     await token.connect(advertiser).approve(await vault.getAddress(), 1_000_000n);
-    await vault.connect(advertiser).createCampaign(await token.getAddress(), 1_000_000n);
+    await vault.connect(advertiser).createCampaign(await token.getAddress(), 1_000_000n, 50_000n);
 
     return { advertiser, publisher, operator, token, settlement };
   }
@@ -51,5 +51,12 @@ describe('AdFlowSettlement', () => {
       settlement,
       'NotAdvertiser',
     );
+  });
+
+  it('enforces the advertiser max unit price inside the settlement contract', async () => {
+    const { advertiser, publisher, settlement } = await deployFixture();
+    await expect(
+      settlement.connect(advertiser).createAgreement(1n, publisher.address, 50_001n, 1n, 100_000n),
+    ).to.be.revertedWithCustomError(settlement, 'RateAboveCampaignCap');
   });
 });

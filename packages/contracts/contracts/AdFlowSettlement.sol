@@ -9,6 +9,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 interface ICampaignVault {
     function campaignAdvertiser(uint256 campaignId) external view returns (address);
     function campaignToken(uint256 campaignId) external view returns (address);
+    function campaignMaxUnitPrice(uint256 campaignId) external view returns (uint256);
     function reserveForSettlement(uint256 campaignId, uint256 amount) external;
     function releaseReservedEscrow(uint256 campaignId, uint256 amount) external;
 }
@@ -29,6 +30,7 @@ contract AdFlowSettlement is Ownable, ReentrancyGuard {
     error NotPublisher();
     error NotSettlementOperator();
     error NothingClaimable();
+    error RateAboveCampaignCap();
     error Replay();
 
     struct Agreement {
@@ -78,6 +80,7 @@ contract AdFlowSettlement is Ownable, ReentrancyGuard {
         if (publisher == address(0)) revert InvalidAddress();
         if (rateAtomic == 0 || rateAtomic > type(uint128).max || allocationCapAtomic == 0 || allocationCapAtomic > type(uint128).max) revert InvalidAmount();
         if (unitScale == 0 || unitScale > type(uint64).max) revert InvalidRate();
+        if (rateAtomic > vault.campaignMaxUnitPrice(campaignId)) revert RateAboveCampaignCap();
 
         vault.reserveForSettlement(campaignId, allocationCapAtomic);
         agreementId = ++nextAgreementId;

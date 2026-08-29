@@ -27,6 +27,7 @@ contract CampaignVault is Ownable, ReentrancyGuard {
         uint128 funded;
         uint128 reserved;
         uint128 paid;
+        uint128 maxUnitPrice;
         bool active;
     }
 
@@ -35,7 +36,7 @@ contract CampaignVault is Ownable, ReentrancyGuard {
 
     mapping(uint256 campaignId => Campaign campaign) public campaigns;
 
-    event CampaignCreated(uint256 indexed campaignId, address indexed advertiser, address indexed token, uint256 initialFunding);
+    event CampaignCreated(uint256 indexed campaignId, address indexed advertiser, address indexed token, uint256 initialFunding, uint256 maxUnitPrice);
     event CampaignFunded(uint256 indexed campaignId, uint256 amount, uint256 totalFunded);
     event CampaignStatusChanged(uint256 indexed campaignId, bool active);
     event CampaignWithdrawal(uint256 indexed campaignId, address indexed advertiser, uint256 amount);
@@ -59,9 +60,9 @@ contract CampaignVault is Ownable, ReentrancyGuard {
         emit SettlementContractChanged(previousContract, newSettlementContract);
     }
 
-    function createCampaign(address token, uint256 initialFunding) external nonReentrant returns (uint256 campaignId) {
+    function createCampaign(address token, uint256 initialFunding, uint256 maxUnitPrice) external nonReentrant returns (uint256 campaignId) {
         if (token == address(0)) revert InvalidAddress();
-        if (initialFunding == 0 || initialFunding > type(uint128).max) revert InvalidAmount();
+        if (initialFunding == 0 || initialFunding > type(uint128).max || maxUnitPrice == 0 || maxUnitPrice > type(uint128).max) revert InvalidAmount();
 
         campaignId = ++nextCampaignId;
         campaigns[campaignId] = Campaign({
@@ -70,10 +71,11 @@ contract CampaignVault is Ownable, ReentrancyGuard {
             funded: uint128(initialFunding),
             reserved: 0,
             paid: 0,
+            maxUnitPrice: uint128(maxUnitPrice),
             active: true
         });
         IERC20(token).safeTransferFrom(msg.sender, address(this), initialFunding);
-        emit CampaignCreated(campaignId, msg.sender, token, initialFunding);
+        emit CampaignCreated(campaignId, msg.sender, token, initialFunding, maxUnitPrice);
     }
 
     /// @notice Adds escrow to an existing campaign. This is an advertiser wallet-signed action.
@@ -113,6 +115,10 @@ contract CampaignVault is Ownable, ReentrancyGuard {
 
     function campaignToken(uint256 campaignId) external view returns (address) {
         return address(_campaign(campaignId).token);
+    }
+
+    function campaignMaxUnitPrice(uint256 campaignId) external view returns (uint256) {
+        return _campaign(campaignId).maxUnitPrice;
     }
 
     /// @dev Settlement cannot withdraw arbitrary escrow: it may release only a campaign's

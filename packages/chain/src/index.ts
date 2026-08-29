@@ -58,9 +58,11 @@ export function prepareCampaignCreation(
   vaultAddress: string,
   tokenAddress: string,
   initialFunding: bigint,
+  maxUnitPrice: bigint,
 ): PreparedContractCall {
   if (!isAddress(vaultAddress) || !isAddress(tokenAddress)) throw new Error('Invalid contract address');
-  if (initialFunding <= 0n) throw new Error('Funding must be positive');
+  if (initialFunding <= 0n || maxUnitPrice <= 0n)
+    throw new Error('Funding and maximum unit price must be positive');
 
   return {
     chainId: 11142220,
@@ -68,7 +70,7 @@ export function prepareCampaignCreation(
     data: encodeFunctionData({
       abi: campaignVaultAbi,
       functionName: 'createCampaign' as never,
-      args: [tokenAddress, initialFunding],
+      args: [tokenAddress, initialFunding, maxUnitPrice],
     }),
     value: 0n,
   };

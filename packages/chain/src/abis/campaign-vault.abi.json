@@ -114,6 +114,12 @@
         "internalType": "uint256",
         "name": "initialFunding",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxUnitPrice",
+        "type": "uint256"
       }
     ],
     "name": "CampaignCreated",
@@ -272,6 +278,25 @@
         "type": "uint256"
       }
     ],
+    "name": "campaignMaxUnitPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "campaignId",
+        "type": "uint256"
+      }
+    ],
     "name": "campaignToken",
     "outputs": [
       {
@@ -319,6 +344,11 @@
         "type": "uint128"
       },
       {
+        "internalType": "uint128",
+        "name": "maxUnitPrice",
+        "type": "uint128"
+      },
+      {
         "internalType": "bool",
         "name": "active",
         "type": "bool"
@@ -337,6 +367,11 @@
       {
         "internalType": "uint256",
         "name": "initialFunding",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxUnitPrice",
         "type": "uint256"
       }
     ],

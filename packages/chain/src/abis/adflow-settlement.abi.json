@@ -99,6 +99,11 @@
   },
   {
     "inputs": [],
+    "name": "RateAboveCampaignCap",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ReentrancyGuardReentrantCall",
     "type": "error"
   },

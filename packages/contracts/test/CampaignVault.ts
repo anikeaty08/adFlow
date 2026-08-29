@@ -11,7 +11,7 @@ describe('CampaignVault', () => {
 
     await token.mint(advertiser.address, 1_000_000n);
     await token.connect(advertiser).approve(await vault.getAddress(), 1_000_000n);
-    await vault.connect(advertiser).createCampaign(await token.getAddress(), 1_000_000n);
+    await vault.connect(advertiser).createCampaign(await token.getAddress(), 1_000_000n, 50_000n);
     return { owner, advertiser, settlement, token, vault };
   }
 

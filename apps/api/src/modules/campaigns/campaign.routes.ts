@@ -84,6 +84,7 @@ export async function registerCampaignRoutes(app: FastifyInstance, dependencies:
         dependencies.config.ADFLOW_CAMPAIGN_VAULT_ADDRESS,
         campaign.settlementTokenAddress,
         amount,
+        BigInt(campaign.maxUnitPriceAtomic),
       ),
       state: 'prepared',
     });
