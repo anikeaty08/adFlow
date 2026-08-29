@@ -1,6 +1,6 @@
-import { and, desc, eq } from 'drizzle-orm';
-import { campaignPolicies, campaigns, type Database } from '@adflow/db';
-import { id } from '@adflow/shared';
+import { and, desc, eq, inArray } from 'drizzle-orm';
+import { campaignCreatives, campaignPolicies, campaigns, creatives, type Database } from '@adflow/db';
+import { DomainError, id } from '@adflow/shared';
 
 export type NewCampaign = {
   ownerUserId: string;
@@ -19,6 +19,7 @@ export type NewCampaign = {
   minReputationScore: number;
   maxPublisherAllocationAtomic?: string;
   explorationRatioBasisPoints: number;
+  creativeIds?: string[];
 };
 
 export class CampaignRepository {
@@ -26,6 +27,7 @@ export class CampaignRepository {
 
   async create(input: NewCampaign) {
     const campaignId = id('cmp');
+    const creativeIds = [...new Set(input.creativeIds ?? [])];
     await this.db.transaction(async (tx) => {
       await tx.insert(campaigns).values({
         id: campaignId,
@@ -50,6 +52,26 @@ export class CampaignRepository {
         maxPublisherAllocationAtomic: input.maxPublisherAllocationAtomic,
         explorationRatioBasisPoints: input.explorationRatioBasisPoints,
       });
+
+      if (!creativeIds.length) return;
+
+      const ownedCreatives = await tx
+        .select({ id: creatives.id })
+        .from(creatives)
+        .where(
+          and(
+            eq(creatives.ownerUserId, input.ownerUserId),
+            eq(creatives.status, 'ACTIVE'),
+            inArray(creatives.id, creativeIds),
+          ),
+        );
+
+      if (ownedCreatives.length !== creativeIds.length)
+        throw new DomainError('INVALID_CREATIVE', 'One or more selected creatives are unavailable.');
+
+      await tx
+        .insert(campaignCreatives)
+        .values(creativeIds.map((creativeId) => ({ campaignId, creativeId })));
     });
     return this.findById(campaignId, input.ownerUserId);
   }
