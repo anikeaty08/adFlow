@@ -83,7 +83,10 @@ export function createDurableCampaignGraph(dependencies: CampaignGraphDependenci
     .addNode('complete_cycle', async () => ({ status: 'COMPLETED' as const }))
     .addEdge(START, 'load_campaign')
     .addEdge('load_campaign', 'observe_market')
-    .addEdge('observe_market', 'discover_publishers')
+    .addEdge('observe_market', 'monitor')
+    .addConditionalEdges('monitor', (state) =>
+      state.monitorResult === 'BAD' || state.monitorResult === 'FRAUD' ? 'optimize' : 'discover_publishers',
+    )
     .addEdge('discover_publishers', 'rank_publishers')
     .addEdge('rank_publishers', 'request_quotes')
     .addEdge('request_quotes', 'evaluate_quotes')
@@ -96,10 +99,7 @@ export function createDurableCampaignGraph(dependencies: CampaignGraphDependenci
     })
     .addEdge('await_quotes', END)
     .addEdge('await_approval', END)
-    .addEdge('execute', 'monitor')
-    .addConditionalEdges('monitor', (state) =>
-      state.monitorResult === 'NO_DATA' ? 'complete_cycle' : 'optimize',
-    )
+    .addEdge('execute', 'complete_cycle')
     .addEdge('optimize', 'policy_gate')
     .addEdge('complete_cycle', END)
     .compile();

@@ -43,10 +43,32 @@ describe('Durable Campaign Agent graph', () => {
   });
 
   it('waits for signed publisher quotes instead of attempting settlement', async () => {
-    const graph = createDurableCampaignGraph(dependencies({ requestQuotes: async () => [] }));
+    const graph = createDurableCampaignGraph(
+      dependencies({ requestQuotes: async () => [], monitor: async () => 'NO_DATA' }),
+    );
 
     const result = await graph.invoke({ campaignId: 'cmp_1', agentRunId: 'run_1' });
 
     expect(result.status).toBe('WAITING_FOR_QUOTES');
+  });
+
+  it('stops before discovery when monitored delivery needs approval to pause', async () => {
+    const discoverPublishers = vi.fn(async () => ['publisher_1']);
+    const executeApprovedAction = vi.fn(async () => 'act_1');
+    const graph = createDurableCampaignGraph(
+      dependencies({
+        discoverPublishers,
+        executeApprovedAction,
+        monitor: async () => 'FRAUD',
+        optimize: async () => ({ kind: 'PAUSE_ALLOCATION' }),
+        evaluatePolicy: async () => 'REQUIRES_APPROVAL',
+      }),
+    );
+
+    const result = await graph.invoke({ campaignId: 'cmp_1', agentRunId: 'run_1' });
+
+    expect(result.status).toBe('WAITING_FOR_APPROVAL');
+    expect(discoverPublishers).not.toHaveBeenCalled();
+    expect(executeApprovedAction).not.toHaveBeenCalled();
   });
 });

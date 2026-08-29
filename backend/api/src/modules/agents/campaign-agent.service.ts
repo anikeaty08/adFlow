@@ -150,7 +150,12 @@ export class CampaignAgentService {
       executeApprovedAction: async (_id, proposal) =>
         this.emitActionReady(begun.run.id, campaignId, proposal),
       monitor: async (): Promise<MonitorResult> => this.performance.monitor(campaignId),
-      optimize: async () => ({ kind: 'NO_ACTION' }),
+      optimize: async (_id, monitorResult) => {
+        if (monitorResult !== 'BAD' && monitorResult !== 'FRAUD') return { kind: 'NO_ACTION' };
+        const proposal: CampaignProposal = { kind: 'PAUSE_ALLOCATION' };
+        await this.emitPauseRecommendation(begun.run.id, campaignId, monitorResult, proposal);
+        return proposal;
+      },
     });
 
     try {
@@ -244,6 +249,10 @@ export class CampaignAgentService {
     proposal: CampaignProposal,
   ): PolicyDecision {
     if (proposal.kind === 'NO_ACTION') return 'DENY';
+    if (proposal.kind === 'PAUSE_ALLOCATION')
+      return campaign && ['FUNDED', 'DISCOVERING', 'ACTIVE'].includes(campaign.status)
+        ? 'REQUIRES_APPROVAL'
+        : 'DENY';
     if (!campaign || !quote) return 'DENY';
     const result = this.policy.evaluate({
       campaignStatus: campaign.status,
@@ -276,6 +285,32 @@ export class CampaignAgentService {
       executedActionId: actionId,
     });
     return actionId;
+  }
+
+  private async emitPauseRecommendation(
+    agentRunId: string,
+    campaignId: string,
+    monitorResult: Exclude<MonitorResult, 'GOOD' | 'NO_DATA'>,
+    proposal: CampaignProposal,
+  ) {
+    const actionId = id('act');
+    await this.outbox.enqueue('agent.pause.recommended', 'campaign', campaignId, {
+      actionId,
+      agentRunId,
+      campaignId,
+      monitorResult,
+      proposal,
+    });
+    await this.runRepository.recordDecision({
+      agentRunId,
+      campaignId,
+      decisionType: proposal.kind,
+      proposal,
+      policyDecision: 'REQUIRES_APPROVAL',
+      reasonCodes: [`PERFORMANCE_${monitorResult}`, 'HUMAN_OR_WALLET_APPROVAL_REQUIRED'],
+      resultStatus: 'PAUSE_RECOMMENDED',
+      executedActionId: actionId,
+    });
   }
 
   private databaseStatus(

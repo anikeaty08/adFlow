@@ -37,6 +37,7 @@ export class OutboxActivityPublisher implements OutboxPublisher {
 
   private title(topic: string) {
     if (topic === 'agent.action.ready') return 'Agent action ready for approval';
+    if (topic === 'agent.pause.recommended') return 'Campaign pause recommended';
     if (topic === 'settlement.proposal.requested') return 'Settlement proposal requested';
     return 'AdFlow operational event';
   }
@@ -44,6 +45,8 @@ export class OutboxActivityPublisher implements OutboxPublisher {
   private summary(topic: string) {
     if (topic === 'agent.action.ready')
       return 'A policy-approved agent proposal is ready for the applicable wallet or human approval flow.';
+    if (topic === 'agent.pause.recommended')
+      return 'Verified delivery rules detected poor or suspicious performance; a wallet or human must approve any pause.';
     if (topic === 'settlement.proposal.requested')
       return 'AdFlow is evaluating verified delivery for a possible settlement epoch.';
     return 'A committed AdFlow event was processed.';
