@@ -22,6 +22,15 @@ export class PublisherRepository {
     return publisher;
   }
 
+  async findOwnedPublisher(publisherId: string, ownerUserId: string) {
+    const [publisher] = await this.db
+      .select()
+      .from(publishers)
+      .where(and(eq(publishers.id, publisherId), eq(publishers.ownerUserId, ownerUserId)))
+      .limit(1);
+    return publisher;
+  }
+
   async addSite(publisherId: string, origin: string, method: string) {
     const normalizedDomain = new URL(origin).hostname.toLowerCase();
     const [site] = await this.db

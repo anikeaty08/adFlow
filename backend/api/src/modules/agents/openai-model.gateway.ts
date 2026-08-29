@@ -28,13 +28,13 @@ const responseSchema = z.object({
   candidateId: z.string().min(1).nullable().optional(),
 });
 
-/** GPT-4o mini is limited to bounded planning; it does not receive an executor or wallet. */
+/** The configured OpenAI planner is limited to bounded planning; it does not receive an executor or wallet. */
 export class OpenAiCampaignModelGateway implements CampaignModelGateway {
   private readonly client: OpenAI;
 
   constructor(
     apiKey: string,
-    private readonly model = 'gpt-4o-mini',
+    private readonly model = 'gpt-4.1',
   ) {
     this.client = new OpenAI({ apiKey, timeout: 12_000, maxRetries: 1 });
   }
@@ -48,7 +48,9 @@ export class OpenAiCampaignModelGateway implements CampaignModelGateway {
     });
     const completion = await this.client.chat.completions.create({
       model: this.model,
-      temperature: 0,
+      // GPT-5 Mini accepts only its default sampling configuration. Legacy models retain the
+      // zero-temperature setting so the planner is as repeatable as their API allows.
+      ...(this.model.startsWith('gpt-5') ? {} : { temperature: 0 }),
       response_format: {
         type: 'json_schema',
         json_schema: {

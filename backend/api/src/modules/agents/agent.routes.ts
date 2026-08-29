@@ -7,9 +7,12 @@ import { response } from '../../shared/http.js';
 import { AgentRepository } from './agent.repository.js';
 import { CampaignQueue } from './campaign-queue.js';
 import { CampaignRepository } from '../campaigns/campaign.repository.js';
+import { PublisherRepository } from '../publishers/publisher.repository.js';
+import { validateAgentCreationInput } from './agent-creation.policy.js';
 
 export async function registerAgentRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const repository = new AgentRepository(dependencies.db);
+  const publishers = new PublisherRepository(dependencies.db);
   app.post('/api/v1/agents', async (request) => {
     const user = await requireUser(request, dependencies.db);
     const input = z
@@ -20,7 +23,14 @@ export async function registerAgentRoutes(app: FastifyInstance, dependencies: Ap
         walletAddress: address.optional(),
       })
       .parse(request.body);
-    return response(request, await repository.create({ ownerUserId: user.id, ...input }));
+    const validated = validateAgentCreationInput(input, user.walletAddress);
+    if (
+      validated.role === 'PUBLISHER' &&
+      !(await publishers.findOwnedPublisher(validated.publisherId!, user.id))
+    )
+      throw new DomainError('NOT_FOUND', 'Publisher profile was not found.');
+
+    return response(request, await repository.create({ ownerUserId: user.id, ...validated }));
   });
   app.get('/api/v1/agents/:agentId', async (request) => {
     const user = await requireUser(request, dependencies.db);

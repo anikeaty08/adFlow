@@ -104,7 +104,7 @@ STRICT_POLICY_MODE=true
 
 # Server-only integrations
 OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-4o-mini
+OPENAI_MODEL=gpt-4.1
 MEM0_API_KEY=...
 # MEMO_API_KEY is supported as a compatibility alias.
 MEM0_BASE_URL=https://api.mem0.ai

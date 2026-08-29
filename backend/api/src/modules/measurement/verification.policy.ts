@@ -1,4 +1,4 @@
-import { DomainError, type PlacementClaims } from '@adflow/shared';
+import { DomainError, hash, type PlacementClaims } from '@adflow/shared';
 
 export type ImpressionInput = {
   occurredAt: Date;
@@ -34,6 +34,7 @@ export class DisplayVerificationPolicy {
       throw new DomainError('VIEWABILITY_NOT_MET', 'Impression did not meet the viewability policy.');
     if (new URL(input.origin).origin !== input.origin)
       throw new DomainError('INVALID_MEASUREMENT', 'Page origin must not include a path.');
+    this.requireAuthorizedOrigin(claims, input.origin);
     return {
       status: 'ACCEPTED',
       policyVersion: this.version,
@@ -45,7 +46,16 @@ export class DisplayVerificationPolicy {
   validateClick(claims: PlacementClaims, origin: string): VerificationResult {
     if (new URL(origin).origin !== origin)
       throw new DomainError('INVALID_MEASUREMENT', 'Page origin must not include a path.');
+    this.requireAuthorizedOrigin(claims, origin);
     return { status: 'ACCEPTED', policyVersion: this.version, reasonCodes: ['ORIGIN_VALID'], riskScore: 0 };
+  }
+
+  private requireAuthorizedOrigin(claims: PlacementClaims, origin: string) {
+    if (hash(origin) !== claims.originHash)
+      throw new DomainError(
+        'ORIGIN_NOT_AUTHORIZED',
+        'Measurement origin does not match the placement claim.',
+      );
   }
 }
 

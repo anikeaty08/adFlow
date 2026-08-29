@@ -6,6 +6,7 @@ import type { ApplicationDependencies } from '../../types.js';
 import { requireUser } from '../../shared/auth.js';
 import { response } from '../../shared/http.js';
 import { QuoteRepository } from './quote.repository.js';
+import { CampaignRepository } from '../campaigns/campaign.repository.js';
 
 const quoteSchema = z.object({
   publisherAgentId: z.string().min(1),
@@ -22,18 +23,21 @@ const quoteSchema = z.object({
 
 export async function registerQuoteRoutes(app: FastifyInstance, dependencies: ApplicationDependencies) {
   const repository = new QuoteRepository(dependencies.db);
+  const campaigns = new CampaignRepository(dependencies.db);
   app.get('/api/v1/campaigns/:campaignId/quotes', async (request) => {
-    await requireUser(request, dependencies.db);
-    return response(
-      request,
-      await repository.listForCampaign((request.params as { campaignId: string }).campaignId),
-    );
+    const user = await requireUser(request, dependencies.db);
+    const campaignId = (request.params as { campaignId: string }).campaignId;
+    if (!(await campaigns.findById(campaignId, user.id)))
+      throw new DomainError('NOT_FOUND', 'Campaign was not found.');
+    return response(request, await repository.listForCampaign(campaignId));
   });
   app.get('/api/v1/quotes/:quoteId', async (request) => {
     const user = await requireUser(request, dependencies.db);
     const campaignId = z
       .string()
       .parse(request.query && (request.query as { campaignId?: string }).campaignId);
+    if (!(await campaigns.findById(campaignId, user.id)))
+      throw new DomainError('NOT_FOUND', 'Campaign was not found.');
     const quote = await repository.find((request.params as { quoteId: string }).quoteId, campaignId);
     if (!quote) throw new DomainError('NOT_FOUND', 'Quote was not found.');
     return response(request, quote);

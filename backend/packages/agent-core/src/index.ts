@@ -5,6 +5,7 @@ import { proposalSchema, type CampaignProposal } from './proposal.js';
 export * from './campaign-graph.js';
 export * from './proposal.js';
 export * from './publisher-graph.js';
+export * from './publisher-negotiation.policy.js';
 
 const AgentState = new StateSchema({
   campaignId: z.string(),

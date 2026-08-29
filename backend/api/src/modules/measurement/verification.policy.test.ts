@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PlacementClaims } from '@adflow/shared';
+import { hash, type PlacementClaims } from '@adflow/shared';
 import { DisplayVerificationPolicy, FraudHeuristicPolicy } from './verification.policy.js';
 
 const claims: PlacementClaims = {
@@ -9,7 +9,7 @@ const claims: PlacementClaims = {
   slotId: 'slot_1',
   publisherSiteId: 'site_1',
   creativeId: 'crt_1',
-  originHash: 'hash',
+  originHash: hash('https://publisher.example'),
   destination: 'https://advertiser.example',
   issuedAt: Date.now(),
   expiresAt: Date.now() + 60_000,
@@ -35,6 +35,22 @@ describe('DisplayVerificationPolicy', () => {
         visibleMs: 999,
       }),
     ).toThrow('viewability'));
+
+  it('rejects a measurement replayed from an origin outside the placement claim', () => {
+    const policy = new DisplayVerificationPolicy();
+
+    expect(() => policy.validateClick(claims, 'https://attacker.example')).toThrow(
+      'Measurement origin does not match the placement claim.',
+    );
+    expect(() =>
+      policy.validateImpression(claims, {
+        occurredAt: new Date(),
+        origin: 'https://attacker.example',
+        visibleRatio: 1,
+        visibleMs: 1_000,
+      }),
+    ).toThrow('Measurement origin does not match the placement claim.');
+  });
 });
 
 describe('FraudHeuristicPolicy', () => {

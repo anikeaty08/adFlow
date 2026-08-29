@@ -50,7 +50,7 @@ const schema = z
     UPSTASH_REDIS_REST_URL: z.url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
     OPENAI_API_KEY: z.string().min(1).optional(),
-    OPENAI_MODEL: z.literal('gpt-4o-mini').default('gpt-4o-mini'),
+    OPENAI_MODEL: z.enum(['gpt-4o-mini', 'gpt-4.1', 'gpt-5-mini']).default('gpt-4.1'),
     MEM0_API_KEY: z.string().min(1).optional(),
     MEMO_API_KEY: z.string().min(1).optional(),
     MEM0_BASE_URL: z.url().default('https://api.mem0.ai'),

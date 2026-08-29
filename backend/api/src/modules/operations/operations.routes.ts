@@ -1,6 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import { and, count, eq, sql } from 'drizzle-orm';
-import { adSlots, agents, agentRuns, agreements, measurementEvents, publisherSites } from '@adflow/db';
+import {
+  adSlots,
+  agents,
+  agentRuns,
+  agreements,
+  campaigns as campaignRecords,
+  measurementEvents,
+  publisherSites,
+} from '@adflow/db';
 import { DomainError } from '@adflow/shared';
 import type { ApplicationDependencies } from '../../types.js';
 import { requireUser } from '../../shared/auth.js';
@@ -143,14 +151,19 @@ export async function registerOperationsRoutes(app: FastifyInstance, dependencie
 
   app.get('/api/v1/agent-runs/:runId', async (request) => {
     const user = await requireUser(request, dependencies.db);
-    void user;
     const [run] = await dependencies.db
-      .select()
+      .select({ run: agentRuns })
       .from(agentRuns)
-      .where(eq(agentRuns.id, (request.params as { runId: string }).runId))
+      .innerJoin(campaignRecords, eq(agentRuns.campaignId, campaignRecords.id))
+      .where(
+        and(
+          eq(agentRuns.id, (request.params as { runId: string }).runId),
+          eq(campaignRecords.ownerUserId, user.id),
+        ),
+      )
       .limit(1);
     if (!run) throw new DomainError('NOT_FOUND', 'Agent run was not found.');
-    return response(request, run);
+    return response(request, run.run);
   });
 
   for (const [path, trigger] of [
