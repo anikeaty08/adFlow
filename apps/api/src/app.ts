@@ -3,6 +3,7 @@ import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import { ZodError } from 'zod';
 import { DomainError } from '@adflow/shared';
 import type { ApplicationDependencies } from './types.js';
 import { response } from './shared/http.js';
@@ -29,15 +30,20 @@ export async function buildApp(dependencies: ApplicationDependencies) {
 
   app.setErrorHandler((error, request, reply) => {
     const domainError = error instanceof DomainError ? error : undefined;
+    const validationError = error instanceof ZodError ? error : undefined;
     const status = domainError
       ? ({ UNAUTHORIZED: 401, FORBIDDEN: 403, NOT_FOUND: 404, CONFLICT: 409 }[domainError.code] ?? 400)
-      : 500;
+      : validationError
+        ? 400
+        : 500;
     request.log.error(error);
     reply.status(status).send({
       error: {
-        code: domainError?.code ?? 'INTERNAL_ERROR',
-        message: domainError?.message ?? 'Unexpected server error.',
-        details: domainError?.details ?? {},
+        code: domainError?.code ?? (validationError ? 'VALIDATION_ERROR' : 'INTERNAL_ERROR'),
+        message:
+          domainError?.message ??
+          (validationError ? 'Request validation failed.' : 'Unexpected server error.'),
+        details: domainError?.details ?? validationError?.flatten() ?? {},
       },
       meta: { requestId: request.id },
     });

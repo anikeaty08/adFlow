@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
+import { randomBytes } from 'node:crypto';
+
+dotenv.config({ path: fileURLToPath(new URL('../../../.env', import.meta.url)) });
 const schema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -10,11 +15,23 @@ const schema = z
     CELO_CHAIN_ID: z.coerce.number().int().positive().default(11142220),
     CELO_RPC_URL: z.url().default('https://forno.celo-sepolia.celo-testnet.org'),
     CELO_BLOCK_EXPLORER: z.url().default('https://celo-sepolia.blockscout.com'),
-    USDC_TOKEN_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+    USDC_TOKEN_ADDRESS: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{40}$/)
+      .default('0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B'),
     USDC_DECIMALS: z.coerce.number().int().min(0).max(36).default(6),
-    USDC_FEE_CURRENCY_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
-    ERC8004_IDENTITY_REGISTRY: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
-    ERC8004_REPUTATION_REGISTRY: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+    USDC_FEE_CURRENCY_ADDRESS: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{40}$/)
+      .default('0x4822e58de6f5e485eF90df51C41CE01721331dC0'),
+    ERC8004_IDENTITY_REGISTRY: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{40}$/)
+      .default('0x8004A818BFB912233c491871b3d84c89A494BD9E'),
+    ERC8004_REPUTATION_REGISTRY: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{40}$/)
+      .default('0x8004B663056A597Dffe9eCcC1965A193B7388713'),
     ADFLOW_CAMPAIGN_VAULT_ADDRESS: z
       .string()
       .regex(/^0x[a-fA-F0-9]{40}$/)
@@ -25,6 +42,8 @@ const schema = z
       .optional(),
     CHAIN_WRITE_MODE: z.literal('frontend_wallet').default('frontend_wallet'),
     REDIS_URL: z.url().optional(),
+    UPSTASH_REDIS_REST_URL: z.url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
     OPENAI_API_KEY: z.string().min(1).optional(),
     OPENAI_MODEL: z.literal('gpt-4o-mini').default('gpt-4o-mini'),
     X402_FACILITATOR_URL: z.url().optional(),
@@ -50,4 +69,21 @@ const schema = z
       ctx.addIssue({ code: 'custom', message: 'Mainnet requires STRICT_POLICY_MODE=true' });
   });
 export type Config = z.infer<typeof schema>;
-export const loadConfig = (): Config => schema.parse(process.env);
+export const loadConfig = (): Config => {
+  const environment = {
+    ...process.env,
+    SESSION_SECRET: process.env.SESSION_SECRET ?? randomBytes(32).toString('hex'),
+    PLACEMENT_TOKEN_SECRET: process.env.PLACEMENT_TOKEN_SECRET ?? randomBytes(32).toString('hex'),
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? process.env.OPEN_AI_API_KEY,
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ?? process.env.CLOUDINARY_SECCRET_KEY,
+    REDIS_URL: process.env.REDIS_URL,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+  };
+  const parsed = schema.parse(environment);
+  if (!parsed.REDIS_URL && parsed.UPSTASH_REDIS_REST_URL && parsed.UPSTASH_REDIS_REST_TOKEN) {
+    const redisHost = new URL(parsed.UPSTASH_REDIS_REST_URL).hostname;
+    parsed.REDIS_URL = `rediss://default:${encodeURIComponent(parsed.UPSTASH_REDIS_REST_TOKEN)}@${redisHost}:6379`;
+  }
+  return parsed;
+};

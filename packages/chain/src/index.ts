@@ -5,9 +5,12 @@ import {
   http,
   isAddress,
   type Address,
+  type Abi,
   type Hex,
   type PublicClient,
 } from 'viem';
+import campaignVaultArtifact from './abis/campaign-vault.abi.json' with { type: 'json' };
+import settlementArtifact from './abis/adflow-settlement.abi.json' with { type: 'json' };
 
 export const celoSepolia = defineChain({
   id: 11142220,
@@ -36,29 +39,8 @@ export type PreparedContractCall = {
   value: 0n;
 };
 
-const campaignVaultAbi = [
-  {
-    type: 'function',
-    name: 'createCampaign',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'token', type: 'address' },
-      { name: 'initialFunding', type: 'uint256' },
-    ],
-    outputs: [{ name: 'campaignId', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'createAgreement',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'campaignId', type: 'uint256' },
-      { name: 'publisher', type: 'address' },
-      { name: 'allocationCap', type: 'uint256' },
-    ],
-    outputs: [{ name: 'agreementId', type: 'uint256' }],
-  },
-] as const;
+export const campaignVaultAbi = campaignVaultArtifact as Abi;
+export const adflowSettlementAbi = settlementArtifact as Abi;
 
 export function prepareCampaignCreation(
   vaultAddress: string,
@@ -73,7 +55,7 @@ export function prepareCampaignCreation(
     to: vaultAddress,
     data: encodeFunctionData({
       abi: campaignVaultAbi,
-      functionName: 'createCampaign',
+      functionName: 'createCampaign' as never,
       args: [tokenAddress, initialFunding],
     }),
     value: 0n,
@@ -95,7 +77,7 @@ export function prepareAgreementCreation(
     to: vaultAddress,
     data: encodeFunctionData({
       abi: campaignVaultAbi,
-      functionName: 'createAgreement',
+      functionName: 'createAgreement' as never,
       args: [onchainCampaignId, publisherAddress, allocationCap],
     }),
     value: 0n,

@@ -3,73 +3,34 @@ import { ethers } from 'hardhat';
 
 describe('CampaignVault', () => {
   async function deployFixture() {
-    const [owner, advertiser, publisher, operator] = await ethers.getSigners();
+    const [owner, advertiser, settlement] = await ethers.getSigners();
     const Token = await ethers.getContractFactory('ERC20Mock');
     const token = await Token.deploy();
     const Vault = await ethers.getContractFactory('CampaignVault');
-    const vault = await Vault.deploy(owner.address, operator.address);
+    const vault = await Vault.deploy(owner.address, settlement.address);
 
-    await token.mint(advertiser.address, 2_000_000n);
-
-    return { advertiser, publisher, operator, token, vault };
-  }
-
-  async function createAcceptedAgreement() {
-    const fixture = await deployFixture();
-    const { advertiser, publisher, token, vault } = fixture;
-
+    await token.mint(advertiser.address, 1_000_000n);
     await token.connect(advertiser).approve(await vault.getAddress(), 1_000_000n);
     await vault.connect(advertiser).createCampaign(await token.getAddress(), 1_000_000n);
-    await vault.connect(advertiser).createAgreement(1n, publisher.address, 500_000n);
-    await vault.connect(publisher).acceptAgreement(1n);
-
-    return fixture;
+    return { owner, advertiser, settlement, token, vault };
   }
 
-  it('escrows funding and limits settlement to an accepted agreement cap', async () => {
-    const { operator, publisher, token, vault } = await createAcceptedAgreement();
-    const reference = ethers.id('epoch:agreement-1:1');
+  it('escrows funding and releases only reserved funds to the settlement contract', async () => {
+    const { owner, settlement, token, vault } = await deployFixture();
+    await vault.connect(owner).setSettlementContract(settlement.address);
+    await vault.connect(settlement).reserveForSettlement(1n, 400_000n);
 
-    await vault.connect(operator).recordSettlement(1n, 400_000n, reference, ethers.id('evidence:1'));
-
-    expect(await vault.claimable(publisher.address, await token.getAddress())).to.equal(400_000n);
-    await expect(
-      vault.connect(operator).recordSettlement(1n, 100_001n, ethers.id('epoch:agreement-1:2'), ethers.id('evidence:2')),
-    ).to.be.revertedWithCustomError(vault, 'AllocationExceeded');
+    expect(await vault.availableEscrow(1n)).to.equal(600_000n);
+    await vault.connect(settlement).releaseReservedEscrow(1n, 250_000n);
+    expect(await token.balanceOf(settlement.address)).to.equal(250_000n);
   });
 
-  it('prevents an operator from replaying a settlement epoch', async () => {
-    const { operator, vault } = await createAcceptedAgreement();
-    const reference = ethers.id('epoch:agreement-1:1');
+  it('prevents an advertiser from withdrawing reserved escrow', async () => {
+    const { owner, settlement, advertiser, vault } = await deployFixture();
+    await vault.connect(owner).setSettlementContract(settlement.address);
+    await vault.connect(settlement).reserveForSettlement(1n, 400_000n);
 
-    await vault.connect(operator).recordSettlement(1n, 10n, reference, ethers.id('evidence:1'));
-
-    await expect(
-      vault.connect(operator).recordSettlement(1n, 10n, reference, ethers.id('evidence:1')),
-    ).to.be.revertedWithCustomError(vault, 'SettlementAlreadyRecorded');
-  });
-
-  it('requires publisher acceptance before settlement and transfers only on claim', async () => {
-    const { advertiser, publisher, operator, token, vault } = await deployFixture();
-    await token.connect(advertiser).approve(await vault.getAddress(), 100n);
-    await vault.connect(advertiser).createCampaign(await token.getAddress(), 100n);
-    await vault.connect(advertiser).createAgreement(1n, publisher.address, 100n);
-
-    await expect(
-      vault.connect(operator).recordSettlement(1n, 100n, ethers.id('epoch:unaccepted'), ethers.id('evidence:1')),
-    ).to.be.revertedWithCustomError(vault, 'AgreementInactive');
-
-    await vault.connect(publisher).acceptAgreement(1n);
-    await vault.connect(operator).recordSettlement(1n, 100n, ethers.id('epoch:accepted'), ethers.id('evidence:1'));
-    await vault.connect(publisher).claim(await token.getAddress());
-
-    expect(await token.balanceOf(publisher.address)).to.equal(100n);
-  });
-
-  it('does not let an advertiser withdraw escrow reserved for an agreement', async () => {
-    const { advertiser, vault } = await createAcceptedAgreement();
-
-    await expect(vault.connect(advertiser).withdrawUnreserved(1n, 500_001n)).to.be.revertedWithCustomError(
+    await expect(vault.connect(advertiser).withdrawUnreserved(1n, 600_001n)).to.be.revertedWithCustomError(
       vault,
       'InsufficientAvailableEscrow',
     );

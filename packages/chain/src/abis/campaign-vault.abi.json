@@ -17,26 +17,6 @@
   },
   {
     "inputs": [],
-    "name": "AgreementAlreadyAccepted",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "AgreementInactive",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "AgreementNotFound",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "AllocationExceeded",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "CampaignInactive",
     "type": "error"
   },
@@ -62,37 +42,12 @@
   },
   {
     "inputs": [],
-    "name": "InvalidCampaignState",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidSettlementOperator",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "NotAdvertiser",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "NotPublisher",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "NotSettlementContract",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotSettlementOperator",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NothingClaimable",
     "type": "error"
   },
   {
@@ -132,85 +87,6 @@
     ],
     "name": "SafeERC20FailedOperation",
     "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "SettlementAlreadyRecorded",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "SettlementReferenceRequired",
-    "type": "error"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "agreementId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "publisher",
-        "type": "address"
-      }
-    ],
-    "name": "AgreementAccepted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "agreementId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "campaignId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "publisher",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "allocationCap",
-        "type": "uint256"
-      }
-    ],
-    "name": "AgreementCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "agreementId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "active",
-        "type": "bool"
-      }
-    ],
-    "name": "AgreementStatusChanged",
-    "type": "event"
   },
   {
     "anonymous": false,
@@ -318,31 +194,6 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "publisher",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "Claimed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
         "name": "previousOwner",
         "type": "address"
       },
@@ -374,113 +225,6 @@
     ],
     "name": "SettlementContractChanged",
     "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "previousOperator",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newOperator",
-        "type": "address"
-      }
-    ],
-    "name": "SettlementOperatorChanged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "settlementReference",
-        "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "agreementId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "evidenceRoot",
-        "type": "bytes32"
-      }
-    ],
-    "name": "SettlementRecorded",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "agreementId",
-        "type": "uint256"
-      }
-    ],
-    "name": "acceptAgreement",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "agreementId",
-        "type": "uint256"
-      }
-    ],
-    "name": "agreements",
-    "outputs": [
-      {
-        "internalType": "uint64",
-        "name": "campaignId",
-        "type": "uint64"
-      },
-      {
-        "internalType": "address",
-        "name": "publisher",
-        "type": "address"
-      },
-      {
-        "internalType": "uint128",
-        "name": "allocationCap",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint128",
-        "name": "settled",
-        "type": "uint128"
-      },
-      {
-        "internalType": "bool",
-        "name": "accepted",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "active",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [
@@ -589,72 +333,6 @@
         "internalType": "address",
         "name": "token",
         "type": "address"
-      }
-    ],
-    "name": "claim",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "publisher",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "claimable",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "campaignId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "publisher",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "allocationCap",
-        "type": "uint256"
-      }
-    ],
-    "name": "createAgreement",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "agreementId",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
       },
       {
         "internalType": "uint256",
@@ -693,19 +371,6 @@
   },
   {
     "inputs": [],
-    "name": "nextAgreementId",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "nextCampaignId",
     "outputs": [
       {
@@ -728,34 +393,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "agreementId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "settlementReference",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "evidenceRoot",
-        "type": "bytes32"
-      }
-    ],
-    "name": "recordSettlement",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -805,24 +442,6 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "agreementId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "active",
-        "type": "bool"
-      }
-    ],
-    "name": "setAgreementActive",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
         "name": "campaignId",
         "type": "uint256"
       },
@@ -851,19 +470,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newOperator",
-        "type": "address"
-      }
-    ],
-    "name": "setSettlementOperator",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "settlementContract",
     "outputs": [
@@ -871,38 +477,6 @@
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "settlementOperator",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "settlementReference",
-        "type": "bytes32"
-      }
-    ],
-    "name": "settlementRecorded",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "recorded",
-        "type": "bool"
       }
     ],
     "stateMutability": "view",
