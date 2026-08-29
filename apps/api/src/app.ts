@@ -18,6 +18,7 @@ import { registerQuoteRoutes } from './modules/quotes/quote.routes.js';
 import { registerActivityRoutes } from './modules/activity/activity.routes.js';
 import { registerPublicRoutes } from './modules/public/public.routes.js';
 import { registerOperationsRoutes } from './modules/operations/operations.routes.js';
+import { registerEmbedRoutes } from './modules/embed/embed.routes.js';
 
 export async function buildApp(dependencies: ApplicationDependencies) {
   const app = Fastify({
@@ -80,5 +81,6 @@ export async function buildApp(dependencies: ApplicationDependencies) {
   await registerActivityRoutes(app, dependencies);
   await registerPublicRoutes(app, dependencies);
   await registerOperationsRoutes(app, dependencies);
+  await registerEmbedRoutes(app, dependencies);
   return app;
 }
