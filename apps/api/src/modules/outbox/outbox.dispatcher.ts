@@ -2,7 +2,12 @@ import type { Database } from '@adflow/db';
 import { OutboxRepository } from './outbox.repository.js';
 
 export interface OutboxPublisher {
-  publish(event: { topic: string; aggregateId: string; payload: Record<string, unknown> }): Promise<void>;
+  publish(event: {
+    eventId: string;
+    topic: string;
+    aggregateId: string;
+    payload: Record<string, unknown>;
+  }): Promise<void>;
 }
 
 /** Publishes only committed records. Postgres remains authoritative if a queue delivery fails. */
@@ -21,6 +26,7 @@ export class OutboxDispatcher {
     for (const event of events) {
       try {
         await this.publisher.publish({
+          eventId: event.id,
           topic: event.topic,
           aggregateId: event.aggregateId,
           payload: event.payload,
