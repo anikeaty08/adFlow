@@ -22,6 +22,7 @@ import { AgentRunRepository } from './agent-run.repository.js';
 import type { CampaignModelGateway } from './openai-model.gateway.js';
 import type { AgentMemoryGateway } from './mem0.memory.gateway.js';
 import { evaluatePublisherEligibility } from '../operations/publisher-eligibility.js';
+import { CampaignPerformanceService } from './campaign-performance.service.js';
 
 type CampaignRecord = typeof campaigns.$inferSelect & {
   policy: typeof campaignPolicies.$inferSelect;
@@ -42,6 +43,7 @@ export class CampaignAgentService {
   private readonly runRepository: AgentRunRepository;
   private readonly outbox: OutboxRepository;
   private readonly quoteRequests: QuoteRequestRepository;
+  private readonly performance: CampaignPerformanceService;
 
   constructor(
     private readonly db: Database,
@@ -51,6 +53,7 @@ export class CampaignAgentService {
     this.runRepository = new AgentRunRepository(db);
     this.outbox = new OutboxRepository(db);
     this.quoteRequests = new QuoteRequestRepository(db);
+    this.performance = new CampaignPerformanceService(db);
   }
 
   async run(campaignId: string, trigger: string, idempotencyKey: string) {
@@ -146,7 +149,7 @@ export class CampaignAgentService {
       evaluatePolicy: async (_id, proposal) => this.evaluatePolicy(campaign, selectedQuote, proposal),
       executeApprovedAction: async (_id, proposal) =>
         this.emitActionReady(begun.run.id, campaignId, proposal),
-      monitor: async (): Promise<MonitorResult> => 'NO_DATA',
+      monitor: async (): Promise<MonitorResult> => this.performance.monitor(campaignId),
       optimize: async () => ({ kind: 'NO_ACTION' }),
     });
 
